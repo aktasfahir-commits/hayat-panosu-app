@@ -502,10 +502,11 @@ body {
 }
 
 .goal-edit-input {
-  width: 90px;
+  flex: 1 1 120px;
+  min-width: 110px;
   font-family: var(--font);
-  font-size: 0.9rem;
-  padding: 6px 8px;
+  font-size: 0.95rem;
+  padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: #fff;
@@ -913,4 +914,9 @@ body.wizard-open { overflow: hidden; }
   .category-goals { grid-template-columns: 1fr; }
   .lib-goals { grid-template-columns: 1fr; }
   .target-input-list .template-item input[type="number"] { width: 100%; }
+
+  /* Hedef değeri düzenleme: input tam satır, butonlar eşit paylaşır (taşma yok) */
+  .goal-edit-row label { flex-basis: 100%; }
+  .goal-edit-input { flex-basis: 100%; min-width: 0; }
+  .goal-edit-row .btn-sm { flex: 1; }
 }
