@@ -102,6 +102,8 @@ function loadData() {
         days: parsed.days || {},
         setupComplete: !!parsed.setupComplete,
       };
+      const name = (parsed.userName || '').trim();
+      if (name) data.userName = name;
       return;
     }
     migrateToV8(parsed || {});
@@ -163,6 +165,8 @@ function migrateToV8(parsed) {
     days,
     setupComplete: goals.length > 0 || !!parsed.setupComplete,
   };
+  const name = (parsed.userName || '').trim();
+  if (name) data.userName = name;
   saveData();
 }
 
@@ -176,7 +180,53 @@ function pruneEmptyDays() {
 
 function saveData() {
   pruneEmptyDays();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const payload = { ...data };
+  if (!payload.userName) delete payload.userName;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+/* ---------------- Kişiselleştirme (userName) ---------------- */
+
+function getUserName() {
+  return (data.userName || '').trim();
+}
+
+// Türkçe iyelik eki: Tülay → Tülay'ın, Ali → Ali'nin
+function possessiveName(name) {
+  const trimmed = name.trim();
+  if (!trimmed) return '';
+  const vowels = 'aeıioöuü';
+  let lastVowel = '';
+  for (let i = trimmed.length - 1; i >= 0; i--) {
+    const c = trimmed[i].toLowerCase();
+    if (vowels.includes(c)) { lastVowel = c; break; }
+  }
+  let suffix = 'ın';
+  if (['e', 'i'].includes(lastVowel)) suffix = 'in';
+  else if (['o', 'u'].includes(lastVowel)) suffix = 'un';
+  else if (['ö', 'ü'].includes(lastVowel)) suffix = 'ün';
+  const last = trimmed.slice(-1).toLowerCase();
+  const connector = vowels.includes(last) ? 'n' : '';
+  return `${trimmed}'${connector}${suffix}`;
+}
+
+function boardTitle() {
+  const name = getUserName();
+  return name ? `${possessiveName(name)} Hayat Panosu` : 'Hayat Panosu';
+}
+
+function saveUserName(name) {
+  const trimmed = (name || '').trim();
+  if (trimmed) data.userName = trimmed;
+  else delete data.userName;
+  saveData();
+  updateBrandTitle();
+}
+
+function updateBrandTitle() {
+  const title = boardTitle();
+  document.getElementById('brand-title').textContent = title;
+  document.title = title;
 }
 
 function generateId() {
@@ -553,6 +603,7 @@ function renderGoalsManage() {
 }
 
 function render() {
+  updateBrandTitle();
   document.getElementById('selected-date').value = selectedDate;
   document.getElementById('formatted-date').textContent = formatTurkishDate(selectedDate);
   document.getElementById('today-btn').classList.toggle('hidden', selectedDate === today());
@@ -855,8 +906,20 @@ function showWelcome() {
 }
 
 function startFromWelcome() {
+  const name = document.getElementById('welcome-name-input').value.trim();
+  if (name) saveUserName(name);
   document.getElementById('welcome-overlay').classList.add('hidden');
   showWizard();
+}
+
+function openNameEditModal() {
+  document.getElementById('name-edit-input').value = getUserName();
+  document.getElementById('name-edit-modal').classList.remove('hidden');
+  document.getElementById('name-edit-input').focus();
+}
+
+function closeNameEditModal() {
+  document.getElementById('name-edit-modal').classList.add('hidden');
 }
 
 function toggleWizardCategory(catId) {
@@ -928,6 +991,7 @@ selectedDateInput.addEventListener('click', () => { selectedDateInput.showPicker
 function goHome() {
   selectedDate = today();
   document.getElementById('guide-modal').classList.add('hidden');
+  closeNameEditModal();
   document.querySelectorAll('.dashboard details[open]').forEach((d) => d.removeAttribute('open'));
   switchView('dashboard');
 }
@@ -1140,6 +1204,18 @@ document.getElementById('wizard-next').addEventListener('click', () => {
 /* ---------------- Başlat ---------------- */
 
 document.getElementById('welcome-start-btn').addEventListener('click', startFromWelcome);
+
+document.getElementById('edit-name-btn').addEventListener('click', openNameEditModal);
+document.getElementById('name-edit-close').addEventListener('click', closeNameEditModal);
+document.getElementById('name-edit-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'name-edit-modal') closeNameEditModal();
+});
+document.getElementById('name-edit-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  saveUserName(document.getElementById('name-edit-input').value);
+  closeNameEditModal();
+  showToast(getUserName() ? `Merhaba ${getUserName()}! 👋` : 'Başlık güncellendi');
+});
 
 populateCategorySelects();
 loadData();

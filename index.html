@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hayat Panosu</title>
-  <link rel="stylesheet" href="styles.css?v=20260609">
+  <link rel="stylesheet" href="styles.css?v=20260610">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,6 +20,11 @@
         <li><span class="welcome-check">✓</span> Günlük ilerlemeni gir</li>
         <li><span class="welcome-check">✓</span> Gelişimini takip et</li>
       </ul>
+      <div class="welcome-name-field">
+        <label for="welcome-name-input" class="welcome-name-label">Adın <span class="welcome-name-optional">(opsiyonel)</span></label>
+        <input type="text" id="welcome-name-input" class="welcome-name-input" placeholder="Örn: Tülay" maxlength="40" autocomplete="given-name">
+        <p class="welcome-name-hint">Girersen pano başlığında adın görünür.</p>
+      </div>
       <button type="button" class="btn btn-primary btn-block welcome-start" id="welcome-start-btn">Başlayalım</button>
     </div>
   </div>
@@ -66,6 +71,18 @@
     </div>
   </div>
 
+  <div id="name-edit-modal" class="modal-overlay hidden">
+    <div class="modal modal-compact">
+      <button type="button" class="modal-close" id="name-edit-close" aria-label="Kapat">✕</button>
+      <h3>Adını Düzenle</h3>
+      <p class="name-edit-desc">Pano başlığında görünecek adını gir. Boş bırakırsan genel başlık kullanılır.</p>
+      <form id="name-edit-form" class="name-edit-form">
+        <input type="text" id="name-edit-input" placeholder="Adın" maxlength="40" autocomplete="given-name">
+        <button type="submit" class="btn btn-primary btn-block">Kaydet</button>
+      </form>
+    </div>
+  </div>
+
   <div id="guide-modal" class="modal-overlay hidden">
     <div class="modal">
       <button type="button" class="modal-close" id="guide-close">✕</button>
@@ -81,13 +98,16 @@
   <div class="app">
     <header class="header">
       <div class="header-main">
-        <button type="button" class="brand-home" id="home-btn" title="Ana panoya dön" aria-label="Ana panoya dön">
-          <span class="brand-logo">🏠</span>
-          <span class="brand-text">
-            <span class="brand-title">Hayat Panosu</span>
-            <span class="subtitle">Kişisel gelişim panon</span>
-          </span>
-        </button>
+        <div class="brand-block">
+          <button type="button" class="brand-home" id="home-btn" title="Ana panoya dön" aria-label="Ana panoya dön">
+            <span class="brand-logo">🏠</span>
+            <span class="brand-text">
+              <span class="brand-title" id="brand-title">Hayat Panosu</span>
+              <span class="subtitle" id="brand-subtitle">Kişisel gelişim panon</span>
+            </span>
+          </button>
+          <button type="button" class="btn-edit-name" id="edit-name-btn">Adını Düzenle</button>
+        </div>
         <div class="streak-pill" id="general-streak" title="Kaç gündür aralıksız ilerleme kaydettiğin">
           <span class="streak-flame">🔥</span>
           <span id="general-streak-text">0 Gün Üst Üste</span>
@@ -207,6 +227,6 @@
     <footer class="footer"><p>Veriler tarayıcında tarih bazlı saklanır.</p></footer>
   </div>
 
-  <script src="app.js?v=20260609"></script>
+  <script src="app.js?v=20260610"></script>
 </body>
 </html>
