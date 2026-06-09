@@ -12,10 +12,10 @@ Onboarding tabanlı kişisel kontrol merkezi. İlk açılışta seçtiğin alanl
 
 ## Dashboard
 
-Sade ve odaklı; ana metrik **günlük ilerleme** ve **streak**:
+Sade ve odaklı; ana metrik **günlük ilerleme** ve **üst üste gün** serisi:
 
 - **Günlük İlerleme** — Aktif hedeflerin ortalama tamamlanma yüzdesi
-- **Streak** — Genel ve kategori bazlı gün serisi
+- **Üst Üste Gün** — Kaç gündür aralıksız ilerleme kaydettiğin (genel ve kategori bazlı)
 - **Aktif Hedefler** — Kategorilere göre gruplanmış, gerçekleşen değer girişi
 - **Yeni Hedef Ekle** — Tek hedeflik hızlı ekleme alanı
 

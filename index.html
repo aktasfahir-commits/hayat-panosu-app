@@ -4,12 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hayat Panosu</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260609">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div id="welcome-overlay" class="modal-overlay hidden">
+    <div class="wizard welcome-card">
+      <div class="welcome-logo">🌱</div>
+      <h2 class="welcome-title">Hayat Panosu'na Hoş Geldin</h2>
+      <p class="welcome-subtitle">Hayatının önemli alanlarını tek yerde takip et. Küçük adımların zamanla büyük değişimler yaratmasını sağla.</p>
+      <ul class="welcome-points">
+        <li><span class="welcome-check">✓</span> Hedeflerini seç</li>
+        <li><span class="welcome-check">✓</span> Günlük ilerlemeni gir</li>
+        <li><span class="welcome-check">✓</span> Gelişimini takip et</li>
+      </ul>
+      <button type="button" class="btn btn-primary btn-block welcome-start" id="welcome-start-btn">Başlayalım</button>
+    </div>
+  </div>
+
   <div id="wizard-overlay" class="wizard-overlay hidden">
     <div class="wizard wizard-wide">
       <button type="button" class="modal-close hidden" id="wizard-close" aria-label="Kapat">✕</button>
@@ -74,9 +88,9 @@
             <span class="subtitle">Kişisel gelişim panon</span>
           </span>
         </button>
-        <div class="streak-pill" id="general-streak">
+        <div class="streak-pill" id="general-streak" title="Kaç gündür aralıksız ilerleme kaydettiğin">
           <span class="streak-flame">🔥</span>
-          <span id="general-streak-text">0 gün</span>
+          <span id="general-streak-text">0 Gün Üst Üste</span>
         </div>
       </div>
 
@@ -98,6 +112,7 @@
             <span class="stat-label">Günlük İlerleme</span>
             <span class="progress-percent" id="progress-percent">0%</span>
           </div>
+          <p class="progress-motivation" id="progress-motivation">Hadi başlayalım 🌱</p>
           <p class="progress-summary" id="progress-detail">Henüz hedef yok</p>
           <div class="progress-bar">
             <div class="progress-fill" id="progress-fill"></div>
@@ -167,7 +182,21 @@
               <select id="lib-custom-category" class="select-input" required></select>
               <input type="number" id="lib-custom-target" placeholder="Hedef değer" min="0.01" step="any" required>
             </div>
-            <input type="text" id="lib-custom-unit" placeholder="Birim (dakika, litre)" maxlength="20">
+            <select id="lib-custom-unit" class="select-input">
+              <option value="adet">adet</option>
+              <option value="dakika">dakika</option>
+              <option value="saniye">saniye</option>
+              <option value="saat">saat</option>
+              <option value="sayfa">sayfa</option>
+              <option value="litre">litre</option>
+              <option value="km">km</option>
+              <option value="TL">TL</option>
+              <option value="gün">gün</option>
+              <option value="defa">defa</option>
+              <option value="gram">gram</option>
+              <option value="diger">diğer</option>
+            </select>
+            <input type="text" id="lib-custom-unit-other" class="lib-unit-other" placeholder="Özel birim yaz" maxlength="20">
             <button type="submit" class="btn btn-primary btn-block">Panoma Ekle</button>
           </form>
         </div>
@@ -178,6 +207,6 @@
     <footer class="footer"><p>Veriler tarayıcında tarih bazlı saklanır.</p></footer>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=20260609"></script>
 </body>
 </html>

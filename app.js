@@ -306,7 +306,10 @@ function renderGoalCard(g) {
         </span>
         <span class="goal-card-meta-right">
           <span class="goal-streak-mini">🔥 ${catStreak}</span>
-          <span class="goal-card-percent">%${p.percent}</span>
+          <span class="goal-card-progress-col">
+            <span class="goal-card-percent">%${p.percent}</span>
+            <span class="goal-card-motivation">${goalMotivationMessage(g.category, p.percent, g.id, selectedDate)}</span>
+          </span>
         </span>
       </div>
       <div class="goal-edit-row hidden" id="edit-${g.id}">
@@ -353,7 +356,7 @@ function renderGoalsByCategory() {
       <section class="category-block cat-${catId}" style="--cat-from:${cat.from};--cat-to:${cat.to}">
         <header class="category-header">
           <span class="category-badge">${cat.icon} ${cat.label}</span>
-          <span class="category-streak">🔥 ${streak} gün streak</span>
+          <span class="category-streak" title="Kaç gündür aralıksız ilerleme kaydettiğin">🔥 ${streak} Gün Üst Üste</span>
         </header>
         <div class="category-goals">${grouped[catId].map(renderGoalCard).join('')}</div>
       </section>`;
@@ -362,17 +365,92 @@ function renderGoalsByCategory() {
 
 function renderStreaks() {
   const general = getGeneralStreak();
-  document.getElementById('general-streak-text').textContent = `${general} gün streak`;
+  document.getElementById('general-streak-text').textContent = `${general} Gün Üst Üste`;
 
   const el = document.getElementById('category-streaks');
   const cats = getActiveCategories();
   el.innerHTML = cats.map((id) => {
     const c = CATEGORIES[id];
     const s = getCategoryStreak(id);
-    return `<div class="cat-streak-chip cat-${id}" style="--cat-from:${c.from};--cat-to:${c.to}">
-      ${c.icon} ${c.label.split(' / ')[0]}: <strong>${s}</strong> gün
+    return `<div class="cat-streak-chip cat-${id}" style="--cat-from:${c.from};--cat-to:${c.to}" title="Kaç gündür aralıksız ilerleme kaydettiğin">
+      ${c.icon} ${c.label.split(' / ')[0]}: <strong>${s}</strong> gün üst üste
     </div>`;
   }).join('');
+}
+
+function motivationMessage(percent) {
+  if (percent >= 100) return 'Muhteşem! Bugünün hedeflerini tamamladın 🎉';
+  if (percent >= 76) return 'Az kaldı, tamamlayabilirsin 💪';
+  if (percent >= 51) return 'Bugün oldukça aktifsin 🔥';
+  if (percent >= 26) return 'İyi gidiyorsun 🚀';
+  if (percent >= 1) return 'Harika başlangıç ✨';
+  return 'Hadi başlayalım 🌱';
+}
+
+// Kategori bazlı hedef kartı motivasyon havuzları (yüzde kademesi → alternatifler).
+const GOAL_MOTIVATION = {
+  spor: {
+    zero: ['Harekete hazır mısın? 🌱', 'Küçük bir adım yeter 🏃', 'Bugün başlamak için güzel'],
+    start: ['İlk adımı attın ✨', 'Güzel bir başlangıç 💪', 'Devam etmek kolaylaşacak'],
+    low: ['Tempo yakalıyorsun 🚀', 'Ritim güzel gidiyor', 'İyi bir ivme'],
+    mid: ['Enerjin yükseliyor 🔥', 'Yarı yoldasın, devam', 'Güzel gidiyorsun'],
+    high: ['Bitişe yaklaştın 💪', 'Son düzlükteyiz', 'Az kaldı, harika gidiyorsun'],
+    complete: ['Harika iş 🎉', 'Spor hedefin tamam 🏆', 'Bugün hedef tamam'],
+  },
+  saglik: {
+    zero: ['Kendine iyi bakmaya hazır mısın? 💧', 'Sağlığın öncelik 🌱', 'Küçük bir adım yeter'],
+    start: ['Güzel bir başlangıç ✨', 'Bedenin sana teşekkür eder', 'İyi bir adım attın'],
+    low: ['Düzenin oturuyor 🚀', 'İyi bir ritim yakaladın', 'Devam etmek güzel hissettirir'],
+    mid: ['Sağlıklı alışkanlık güçleniyor 🔥', 'Yarı yoldasın, devam', 'Güzel ilerliyorsun'],
+    high: ['Hedefe çok yakınsın 💪', 'Son düzlükteyiz', 'Az kaldı, harika gidiyorsun'],
+    complete: ['Harika iş 🎉', 'Sağlık hedefin tamam 💧', 'Bugün hedef tamam'],
+  },
+  zihin: {
+    zero: ['Kendine bir an ayır 🧘', 'Sakin bir başlangıç güzel 🌱', 'Bugün küçük bir mola'],
+    start: ['İlk adımı attın ✨', 'Zihnine iyi geldi', 'Güzel bir başlangıç'],
+    low: ['Dinginlik artıyor 🚀', 'İyi bir ritim yakaladın', 'Devam etmek iyi hissettirir'],
+    mid: ['İç huzurun güçleniyor 🔥', 'Yarı yoldasın, devam', 'Güzel ilerliyorsun'],
+    high: ['Hedefe çok yakınsın 💪', 'Son düzlükteyiz', 'Az kaldı, harika gidiyorsun'],
+    complete: ['Harika iş 🎉', 'Zihin hedefin tamam 🧘', 'Bugün hedef tamam'],
+  },
+  gelisim: {
+    zero: ['Öğrenmeye hazır mısın? 📚', 'Küçük bir adım yeter 🌱', 'Bugün gelişim için güzel'],
+    start: ['İlk adımı attın ✨', 'Güzel bir başlangıç', 'Her sayfa, her dakika değerli'],
+    low: ['Öğrenme ritmi oturuyor 🚀', 'İyi bir ivme yakaladın', 'Devam etmek güzel'],
+    mid: ['Gelişimin hızlanıyor 🔥', 'Yarı yoldasın, devam', 'Güzel ilerliyorsun'],
+    high: ['Hedefe çok yakınsın 💪', 'Son düzlükteyiz', 'Az kaldı, harika gidiyorsun'],
+    complete: ['Harika iş 🎉', 'Gelişim hedefin tamam 📚', 'Bugün hedef tamam'],
+  },
+  yasam: {
+    zero: ['Bugün küçük bir adım at 💰', 'Hedefin için hazır mısın? 🌱', 'Başlamak için güzel bir gün'],
+    start: ['İlk adımı attın ✨', 'Güzel bir başlangıç', 'Her adım seni yaklaştırır'],
+    low: ['Düzenin oturuyor 🚀', 'İyi bir ritim yakaladın', 'Devam etmek güzel hissettirir'],
+    mid: ['Hedefine yaklaşıyorsun 🔥', 'Yarı yoldasın, devam', 'Güzel ilerliyorsun'],
+    high: ['Hedefe çok yakınsın 💪', 'Son düzlükteyiz', 'Az kaldı, harika gidiyorsun'],
+    complete: ['Harika iş 🎉', 'Yaşam hedefin tamam 💰', 'Bugün hedef tamam'],
+  },
+};
+
+function motivationTier(percent) {
+  if (percent >= 100) return 'complete';
+  if (percent >= 76) return 'high';
+  if (percent >= 51) return 'mid';
+  if (percent >= 26) return 'low';
+  if (percent >= 1) return 'start';
+  return 'zero';
+}
+
+// Aynı hedef + gün + kademe → her render'da aynı alternatif (rastgele değil).
+function stablePick(seed, options) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  return options[Math.abs(h) % options.length];
+}
+
+function goalMotivationMessage(category, percent, goalId, date) {
+  const tier = motivationTier(percent);
+  const pool = GOAL_MOTIVATION[category]?.[tier] || GOAL_MOTIVATION.gelisim[tier];
+  return stablePick(`${goalId}|${date}|${tier}`, pool);
 }
 
 function updateStats() {
@@ -385,6 +463,8 @@ function updateStats() {
   const prefix = selectedDate === today() ? 'Bugün' : 'Bu gün';
   document.getElementById('progress-detail').textContent =
     total > 0 ? `${prefix} ${progressed} / ${total} hedef ilerledi` : 'Henüz hedef yok';
+  // Yüzdeye göre motivasyon mesajı — her zaman dolu ve görünür.
+  document.getElementById('progress-motivation').textContent = motivationMessage(prog.percent);
 }
 
 function renderManageItem(g) {
@@ -706,6 +786,17 @@ function closeWizard() {
   document.body.classList.remove('wizard-open');
 }
 
+// İlk açılış karşılama ekranı (sadece kurulum tamamlanmadan önce gösterilir).
+function showWelcome() {
+  document.getElementById('welcome-overlay').classList.remove('hidden');
+  document.body.classList.add('wizard-open');
+}
+
+function startFromWelcome() {
+  document.getElementById('welcome-overlay').classList.add('hidden');
+  showWizard();
+}
+
 function toggleWizardCategory(catId) {
   const idx = wizardSelectedCategories.indexOf(catId);
   if (idx === -1) {
@@ -789,18 +880,32 @@ document.getElementById('library-list').addEventListener('click', (e) => {
   if (btn) addFromLibrary(btn.dataset.key);
 });
 
+// Birim "diğer" seçilince serbest metin alanını göster.
+const libUnitSelect = document.getElementById('lib-custom-unit');
+const libUnitOther = document.getElementById('lib-custom-unit-other');
+libUnitSelect.addEventListener('change', () => {
+  libUnitOther.classList.toggle('show', libUnitSelect.value === 'diger');
+  if (libUnitSelect.value === 'diger') libUnitOther.focus();
+});
+
+function getLibCustomUnit() {
+  if (libUnitSelect.value === 'diger') return libUnitOther.value.trim();
+  return libUnitSelect.value;
+}
+
 // Kütüphaneden özel hedef ekleme (havuz dışı, defaultKey'siz).
 document.getElementById('lib-custom-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const name = document.getElementById('lib-custom-name').value.trim();
   const category = document.getElementById('lib-custom-category').value;
   const target = parseFloat(document.getElementById('lib-custom-target').value);
-  const unit = document.getElementById('lib-custom-unit').value.trim();
+  const unit = getLibCustomUnit();
   if (!name || Number.isNaN(target) || target <= 0) return;
   addGoal({ name, target, unit, category, guide: { description: '', videoUrl: '' } });
   data.setupComplete = true;
   saveData();
   e.target.reset();
+  libUnitOther.classList.remove('show');
   render();
   showToast(`${name} panona eklendi! 🎯`);
 });
@@ -972,7 +1077,10 @@ document.getElementById('wizard-next').addEventListener('click', () => {
 
 /* ---------------- Başlat ---------------- */
 
+document.getElementById('welcome-start-btn').addEventListener('click', startFromWelcome);
+
 populateCategorySelects();
 loadData();
 render();
-if (!data.setupComplete && !hasGoals()) showWizard();
+// İlk kullanım: önce karşılama, ardından mevcut onboarding sihirbazı.
+if (!data.setupComplete && !hasGoals()) showWelcome();

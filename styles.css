@@ -210,11 +210,20 @@ body {
 .progress-header { display: flex; justify-content: space-between; align-items: center; }
 .progress-percent { font-size: 1.05rem; font-weight: 800; color: #16a34a; }
 
-.progress-summary {
-  font-size: 0.95rem;
-  font-weight: 700;
+.progress-motivation {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   color: var(--text);
-  margin: 6px 0 8px;
+  margin: 8px 0 2px;
+}
+
+.progress-summary {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 8px;
 }
 
 .progress-bar {
@@ -342,6 +351,9 @@ body {
 .lib-custom-title { font-size: 1rem; font-weight: 700; }
 .lib-custom-desc { font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 14px; }
 
+.lib-unit-other { display: none; }
+.lib-unit-other.show { display: block; }
+
 .lib-added {
   flex-shrink: 0;
   font-size: 0.75rem;
@@ -456,17 +468,51 @@ body {
 .goal-card-meta {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 8px;
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-bottom: 9px;
 }
 
-.goal-card-meta-right { display: flex; align-items: center; gap: 10px; }
+.goal-card-meta-right {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-shrink: 0;
+}
 
-.goal-card-percent { font-weight: 700; color: var(--cat-from); }
+.goal-card-progress-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 110px;
+  max-width: 155px;
+}
 
-.goal-card-target { display: inline-flex; align-items: center; }
+.goal-card-percent { font-weight: 700; color: var(--cat-from); line-height: 1.2; }
+
+.goal-card-motivation {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.3;
+  text-align: right;
+  word-break: break-word;
+  width: 100%;
+}
+
+.goal-card-target {
+  display: inline-flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
 
 .btn-edit-target {
   background: none;
@@ -772,6 +818,67 @@ body.wizard-open { overflow: hidden; }
 
 .wizard-wide { max-width: 520px; max-height: 90vh; overflow-y: auto; }
 
+/* Karşılama ekranı */
+.welcome-card { max-width: 420px; text-align: center; }
+
+.welcome-logo {
+  width: 64px; height: 64px;
+  margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fff5e6, #ffe8cc);
+  border: 1px solid rgba(255, 140, 66, 0.25);
+}
+
+.welcome-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+
+.welcome-subtitle {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 10px 0 22px;
+}
+
+.welcome-points {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  margin-bottom: 26px;
+}
+
+.welcome-points li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.welcome-check {
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.welcome-start { min-height: 50px; font-size: 1rem; font-weight: 700; }
+
+@media (max-width: 640px) {
+  .welcome-title { font-size: 1.3rem; }
+  .welcome-subtitle { font-size: 0.88rem; }
+}
+
 .modal-close {
   position: absolute; top: 16px; right: 16px;
   background: var(--surface-2);
@@ -913,6 +1020,17 @@ body.wizard-open { overflow: hidden; }
   .form-row { flex-direction: column; }
   .category-goals { grid-template-columns: 1fr; }
   .lib-goals { grid-template-columns: 1fr; }
+  .progress-motivation { font-size: 0.92rem; }
+  .goal-card-meta { flex-wrap: wrap; }
+  .goal-card-meta-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .goal-card-progress-col {
+    min-width: 0;
+    max-width: min(100%, 200px);
+  }
+  .goal-card-motivation { font-size: 0.65rem; line-height: 1.35; }
   .target-input-list .template-item input[type="number"] { width: 100%; }
 
   /* Hedef değeri düzenleme: input tam satır, butonlar eşit paylaşır (taşma yok) */
