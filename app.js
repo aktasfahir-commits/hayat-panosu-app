@@ -308,7 +308,7 @@ function renderGoalCard(g) {
           <span class="goal-streak-mini">🔥 ${catStreak}</span>
           <span class="goal-card-progress-col">
             <span class="goal-card-percent">%${p.percent}</span>
-            <span class="goal-card-motivation">${goalMotivationMessage(g.category, p.percent, g.id, selectedDate)}</span>
+            <span class="goal-card-motivation">${goalMotivationMessage(g, p.percent, selectedDate)}</span>
           </span>
         </span>
       </div>
@@ -387,48 +387,102 @@ function motivationMessage(percent) {
   return 'Hadi başlayalım 🌱';
 }
 
-// Kategori bazlı hedef kartı motivasyon havuzları (yüzde kademesi → alternatifler).
+// Hedef bazlı motivasyon (defaultKey → kademe → alternatifler). Öncelikli havuzlar.
 const GOAL_MOTIVATION = {
+  adim: {
+    zero: ['Ayakkabılar sana bakıyor 👟', 'Koltuk güçlü ama sen daha güçlüsün', 'Bir tur atsan gün değişir'],
+    start: ['Bacaklar uyandı 👟', 'Koltukla arana mesafe koydun', 'Hareketin ilk kıvılcımı yandı'],
+    low: ['Ritmi bulmaya başladın', 'Bugün bedenin sahaya indi', 'Adımlar sessizce birikiyor'],
+    mid: ['Koltuk bugün kaybediyor', 'Yolun yarısı karakter ister', 'Bugün hareket tarafındasın'],
+    high: ['Az kaldı, ayaklar işi biliyor', 'Bugün sokaklar seni tanıdı', 'Neredeyse hedefi ezdin'],
+    complete: ['Koltuk seni yenemedi 👟', 'Ayakların bugün imza attı', 'Bugün bedenin alkışı hak etti'],
+  },
+  su: {
+    zero: ['İlk bardak seni bekliyor 💧', 'Susuzluk alarmı çalmadan başla', 'Bir yudumla sistem açılır'],
+    start: ['Hücrelere ilk selam gitti', 'Bedenin suyla barıştı', 'İlk bardak güzel hamle'],
+    low: ['İçeride işler ferahlıyor', 'Bedenin teşekkür etmeye başladı', 'Su hedefi kıpırdanıyor'],
+    mid: ['Hücreler toplantıya başladı', 'Cildin içeriden destek alıyor', 'Bedenin ferahlığı sevdi'],
+    high: ['Hücreler halaya kalkmak üzere 💧', 'Bugün su tarafı güçlü', 'Biraz daha, ferahlık tamamlanıyor'],
+    complete: ['Hücrelerin bayram ediyor 💧', 'Bugün bedenine iyi baktın', 'İçerisi resmen ferahladı'],
+  },
+  kitap: {
+    zero: ['Bir sayfa kapıyı aralar 📖', 'Kitap sessizce seni bekliyor', 'Zihin için küçük bir kıvılcım'],
+    start: ['Sayfalar ısınmaya başladı', 'Zihnin ilk lokmasını aldı', 'Bir fikir kapıdan içeri girdi'],
+    low: ['Zihin vites yükseltiyor', 'Sayfalar sessizce işliyor', 'Bugün kafana yatırım başladı'],
+    mid: ['Hikâye seni içine alıyor', 'Zihin masaya oturdu', 'Okuma ritmi yakalandı'],
+    high: ['Az kaldı, sayfalar akıyor', 'Bugün zihnin iyi beslendi', 'Kitapla aranız ciddileşti'],
+    complete: ['Zihnin bugün beslendi 📚', 'Bugün kafana iyi baktın', 'Bir hedef, bir fikir daha'],
+  },
+  para: {
+    zero: ['Kumbara sessizce bakıyor', 'Küçük bir miktar yeter', 'Bugün geleceğe göz kırp'],
+    start: ['Kumbara ilk sesi duydu', 'Geleceğe küçük bir not düştün', 'Para kenara yol aldı'],
+    low: ['Birikim kası çalışıyor', 'Küçük para, büyük niyet', 'Gelecek hesabı açıldı'],
+    mid: ['Birikim ciddileşiyor', 'Gelecekteki sen izliyor', 'Kumbara keyiflenmeye başladı'],
+    high: ['Az kaldı, hedef kokusu geldi', 'Bugün para kaçamadı', 'Gelecekteki sen gülümsüyor'],
+    complete: ['Gelecekteki sen teşekkür ediyor 💰', 'Bugün paran yerini buldu', 'Kumbara bugün alkışladı'],
+  },
+  meditasyon: {
+    zero: ['Zihin biraz sessizlik istiyor 🧘', 'İki dakika bile kapı açar', 'Sessizlik seni bekliyor'],
+    start: ['Zihin yavaşça sakinleşiyor', 'İçeride ses biraz kısıldı', 'Kendine küçük bir alan açtın'],
+    low: ['Dinginlik kapıdan baktı', 'Zihin nefes almaya başladı', 'İçerisi biraz yumuşadı'],
+    mid: ['Sakinlik yerleşmeye başladı', 'Zihin sandalyeye oturdu', 'Günün sesi biraz azaldı'],
+    high: ['Az kaldı, zihin hafifliyor', 'Sessizlik iyice yaklaştı', 'İçeride hava değişti'],
+    complete: ['Zihnine sessizlik verdin 🧘', 'Bugün içini biraz susturdun', 'Kendine güzel bir mola verdin'],
+  },
+};
+
+// Kategori yedek havuzu (özel hedef veya havuzu olmayan varsayılanlar için).
+const CATEGORY_MOTIVATION = {
   spor: {
-    zero: ['Harekete hazır mısın? 🌱', 'Küçük bir adım yeter 🏃', 'Bugün başlamak için güzel'],
-    start: ['İlk adımı attın ✨', 'Güzel bir başlangıç 💪', 'Devam etmek kolaylaşacak'],
+    zero: ['Harekete hazır mısın? 🌱', 'Küçük bir adım yeter', 'Bugün başlamak için güzel'],
+    start: ['İlk adımı attın ✨', 'Güzel bir başlangıç', 'Devam etmek kolaylaşır'],
     low: ['Tempo yakalıyorsun 🚀', 'Ritim güzel gidiyor', 'İyi bir ivme'],
-    mid: ['Enerjin yükseliyor 🔥', 'Yarı yoldasın, devam', 'Güzel gidiyorsun'],
-    high: ['Bitişe yaklaştın 💪', 'Son düzlükteyiz', 'Az kaldı, harika gidiyorsun'],
-    complete: ['Harika iş 🎉', 'Spor hedefin tamam 🏆', 'Bugün hedef tamam'],
+    mid: ['Enerjin yükseliyor 🔥', 'Yarı yoldasın', 'Güzel gidiyorsun'],
+    high: ['Bitişe yaklaştın 💪', 'Son düzlük', 'Az kaldı'],
+    complete: ['Bu hedef tamamlandı 🎉', 'Bugünkü adım tamam', 'Harika iş'],
   },
   saglik: {
-    zero: ['Kendine iyi bakmaya hazır mısın? 💧', 'Sağlığın öncelik 🌱', 'Küçük bir adım yeter'],
-    start: ['Güzel bir başlangıç ✨', 'Bedenin sana teşekkür eder', 'İyi bir adım attın'],
-    low: ['Düzenin oturuyor 🚀', 'İyi bir ritim yakaladın', 'Devam etmek güzel hissettirir'],
-    mid: ['Sağlıklı alışkanlık güçleniyor 🔥', 'Yarı yoldasın, devam', 'Güzel ilerliyorsun'],
-    high: ['Hedefe çok yakınsın 💪', 'Son düzlükteyiz', 'Az kaldı, harika gidiyorsun'],
-    complete: ['Harika iş 🎉', 'Sağlık hedefin tamam 💧', 'Bugün hedef tamam'],
+    zero: ['Kendine iyi bak 🌱', 'Küçük bir adım yeter', 'Bugün başlayabilirsin'],
+    start: ['Güzel bir başlangıç ✨', 'İyi bir adım attın', 'Devam güzel'],
+    low: ['Düzenin oturuyor 🚀', 'İyi bir ritim', 'Güzel hissettirir'],
+    mid: ['Alışkanlık güçleniyor 🔥', 'Yarı yoldasın', 'Güzel ilerliyorsun'],
+    high: ['Hedefe yakınsın 💪', 'Son düzlük', 'Az kaldı'],
+    complete: ['Bu hedef tamamlandı 🎉', 'Bugünkü adım tamam', 'Harika iş'],
   },
   zihin: {
-    zero: ['Kendine bir an ayır 🧘', 'Sakin bir başlangıç güzel 🌱', 'Bugün küçük bir mola'],
+    zero: ['Kendine bir an ayır 🧘', 'Sakin başlangıç güzel', 'Küçük bir mola'],
     start: ['İlk adımı attın ✨', 'Zihnine iyi geldi', 'Güzel bir başlangıç'],
-    low: ['Dinginlik artıyor 🚀', 'İyi bir ritim yakaladın', 'Devam etmek iyi hissettirir'],
-    mid: ['İç huzurun güçleniyor 🔥', 'Yarı yoldasın, devam', 'Güzel ilerliyorsun'],
-    high: ['Hedefe çok yakınsın 💪', 'Son düzlükteyiz', 'Az kaldı, harika gidiyorsun'],
-    complete: ['Harika iş 🎉', 'Zihin hedefin tamam 🧘', 'Bugün hedef tamam'],
+    low: ['Dinginlik artıyor 🚀', 'İyi bir ritim', 'Devam iyi hissettirir'],
+    mid: ['Huzur güçleniyor 🔥', 'Yarı yoldasın', 'Güzel ilerliyorsun'],
+    high: ['Hedefe yakınsın 💪', 'Son düzlük', 'Az kaldı'],
+    complete: ['Bu hedef tamamlandı 🎉', 'Bugünkü adım tamam', 'Harika iş'],
   },
   gelisim: {
-    zero: ['Öğrenmeye hazır mısın? 📚', 'Küçük bir adım yeter 🌱', 'Bugün gelişim için güzel'],
-    start: ['İlk adımı attın ✨', 'Güzel bir başlangıç', 'Her sayfa, her dakika değerli'],
-    low: ['Öğrenme ritmi oturuyor 🚀', 'İyi bir ivme yakaladın', 'Devam etmek güzel'],
-    mid: ['Gelişimin hızlanıyor 🔥', 'Yarı yoldasın, devam', 'Güzel ilerliyorsun'],
-    high: ['Hedefe çok yakınsın 💪', 'Son düzlükteyiz', 'Az kaldı, harika gidiyorsun'],
-    complete: ['Harika iş 🎉', 'Gelişim hedefin tamam 📚', 'Bugün hedef tamam'],
+    zero: ['Öğrenmeye hazır mısın? 📚', 'Küçük bir adım yeter', 'Bugün gelişim için güzel'],
+    start: ['İlk adımı attın ✨', 'Güzel bir başlangıç', 'Her dakika değerli'],
+    low: ['Ritim oturuyor 🚀', 'İyi bir ivme', 'Devam güzel'],
+    mid: ['Gelişim hızlanıyor 🔥', 'Yarı yoldasın', 'Güzel ilerliyorsun'],
+    high: ['Hedefe yakınsın 💪', 'Son düzlük', 'Az kaldı'],
+    complete: ['Bu hedef tamamlandı 🎉', 'Bugünkü adım tamam', 'Harika iş'],
   },
   yasam: {
-    zero: ['Bugün küçük bir adım at 💰', 'Hedefin için hazır mısın? 🌱', 'Başlamak için güzel bir gün'],
-    start: ['İlk adımı attın ✨', 'Güzel bir başlangıç', 'Her adım seni yaklaştırır'],
-    low: ['Düzenin oturuyor 🚀', 'İyi bir ritim yakaladın', 'Devam etmek güzel hissettirir'],
-    mid: ['Hedefine yaklaşıyorsun 🔥', 'Yarı yoldasın, devam', 'Güzel ilerliyorsun'],
-    high: ['Hedefe çok yakınsın 💪', 'Son düzlükteyiz', 'Az kaldı, harika gidiyorsun'],
-    complete: ['Harika iş 🎉', 'Yaşam hedefin tamam 💰', 'Bugün hedef tamam'],
+    zero: ['Küçük bir adım at 💰', 'Bugün başlayabilirsin', 'Her adım değerli'],
+    start: ['İlk adımı attın ✨', 'Güzel bir başlangıç', 'Yaklaşıyorsun'],
+    low: ['Düzenin oturuyor 🚀', 'İyi bir ritim', 'Devam güzel'],
+    mid: ['Hedefine yaklaşıyorsun 🔥', 'Yarı yoldasın', 'Güzel ilerliyorsun'],
+    high: ['Hedefe yakınsın 💪', 'Son düzlük', 'Az kaldı'],
+    complete: ['Bu hedef tamamlandı 🎉', 'Bugünkü adım tamam', 'Harika iş'],
   },
+};
+
+// Genel yedek (kategori de bulunamazsa).
+const GENERAL_MOTIVATION = {
+  zero: ['Hadi başlayalım 🌱', 'Küçük bir adım yeter', 'Bugün güzel bir gün'],
+  start: ['İlk adımı attın ✨', 'Güzel bir başlangıç', 'Devam et'],
+  low: ['İyi gidiyorsun 🚀', 'Ritim oturuyor', 'Güzel bir ivme'],
+  mid: ['Devam et 🔥', 'Yarı yoldasın', 'Güzel ilerliyorsun'],
+  high: ['Az kaldı 💪', 'Son düzlük', 'Bitişe yakınsın'],
+  complete: ['Bu hedef tamamlandı 🎉', 'Bugünkü adım tamam', 'Harika iş'],
 };
 
 function motivationTier(percent) {
@@ -447,10 +501,18 @@ function stablePick(seed, options) {
   return options[Math.abs(h) % options.length];
 }
 
-function goalMotivationMessage(category, percent, goalId, date) {
+// Öncelik: hedef havuzu → kategori yedeği → genel yedek.
+function goalMotivationMessage(goal, percent, date) {
   const tier = motivationTier(percent);
-  const pool = GOAL_MOTIVATION[category]?.[tier] || GOAL_MOTIVATION.gelisim[tier];
-  return stablePick(`${goalId}|${date}|${tier}`, pool);
+  const seed = `${goal.id}|${date}|${tier}`;
+  if (goal.defaultKey && GOAL_MOTIVATION[goal.defaultKey]?.[tier]) {
+    return stablePick(seed, GOAL_MOTIVATION[goal.defaultKey][tier]);
+  }
+  const cat = goal.category || 'gelisim';
+  if (CATEGORY_MOTIVATION[cat]?.[tier]) {
+    return stablePick(seed, CATEGORY_MOTIVATION[cat][tier]);
+  }
+  return stablePick(seed, GENERAL_MOTIVATION[tier]);
 }
 
 function updateStats() {
