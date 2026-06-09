@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hayat Panosu</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="wizard-overlay" class="wizard-overlay hidden">
+    <div class="wizard wizard-wide">
+      <button type="button" class="modal-close hidden" id="wizard-close" aria-label="Kapat">✕</button>
+      <div class="wizard-header">
+        <span class="wizard-step-label" id="wizard-step-label">Adım 1 / 3</span>
+        <h2 id="wizard-title">Gelişim alanını seç</h2>
+        <p id="wizard-desc">Hangi alanlarda ilerlemek istiyorsun? En az bir kategori seç.</p>
+      </div>
+      <div id="wizard-step-categories" class="wizard-step">
+        <p class="wizard-presets-title">Gelişim alanlarını seç:</p>
+        <div id="category-selection-grid" class="category-selection-grid"></div>
+        <p id="wizard-empty-categories" class="empty-text">En az bir kategori seç.</p>
+      </div>
+      <div id="wizard-step-goals" class="wizard-step hidden">
+        <p class="wizard-presets-title">Alt hedefleri seç:</p>
+        <div id="goal-selection-list"></div>
+        <div class="wizard-custom-section">
+          <p class="wizard-presets-title">Özel hedef ekle:</p>
+          <form id="wizard-goal-form" class="add-form">
+            <input type="text" id="wizard-goal-name" placeholder="Hedef adı" maxlength="100">
+            <div class="form-row">
+              <select id="wizard-goal-category" class="select-input"></select>
+              <input type="text" id="wizard-goal-unit" placeholder="Birim (dakika, litre)" maxlength="20">
+            </div>
+            <button type="submit" class="btn btn-ghost btn-block">Listeye Ekle</button>
+          </form>
+          <ul id="wizard-draft-list" class="template-list"></ul>
+        </div>
+        <p id="wizard-empty-goals" class="empty-text">En az bir hedef seç.</p>
+      </div>
+      <div id="wizard-step-targets" class="wizard-step hidden">
+        <p class="wizard-presets-title">Hedef değerlerini belirle:</p>
+        <div id="target-input-list"></div>
+        <p id="wizard-empty-targets" class="empty-text">Tüm hedefler için değer gir.</p>
+      </div>
+      <div class="wizard-footer">
+        <button type="button" class="btn btn-ghost" id="wizard-back" disabled>Geri</button>
+        <button type="button" class="btn btn-primary" id="wizard-next">İleri</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="guide-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <button type="button" class="modal-close" id="guide-close">✕</button>
+      <h3 id="guide-title">Nasıl yapılır?</h3>
+      <p id="guide-desc" class="guide-desc"></p>
+      <div id="guide-video-wrap" class="guide-video-wrap hidden">
+        <a id="guide-video-link" href="#" target="_blank" rel="noopener" class="btn btn-primary btn-block">Videoyu İzle</a>
+      </div>
+      <p id="guide-empty" class="empty-text">Henüz rehber eklenmemiş.</p>
+    </div>
+  </div>
+
+  <div class="app">
+    <header class="header">
+      <div class="header-main">
+        <button type="button" class="brand-home" id="home-btn" title="Ana panoya dön" aria-label="Ana panoya dön">
+          <span class="brand-logo">🏠</span>
+          <span class="brand-text">
+            <span class="brand-title">Hayat Panosu</span>
+            <span class="subtitle">Kişisel gelişim panon</span>
+          </span>
+        </button>
+        <div class="streak-pill" id="general-streak">
+          <span class="streak-flame">🔥</span>
+          <span id="general-streak-text">0 gün</span>
+        </div>
+      </div>
+
+      <div class="date-nav">
+        <button type="button" class="btn-nav" id="prev-day">‹</button>
+        <div class="date-nav-center">
+          <input type="date" id="selected-date" class="date-input">
+          <p class="date-label" id="formatted-date"></p>
+        </div>
+        <button type="button" class="btn-nav" id="next-day">›</button>
+        <button type="button" class="btn-today" id="today-btn">Bugün</button>
+      </div>
+
+      <div class="streak-categories" id="category-streaks"></div>
+
+      <div class="stats-bar">
+        <div class="stat-card stat-progress stat-progress-full">
+          <div class="progress-header">
+            <span class="stat-label">Günlük İlerleme</span>
+            <span class="progress-percent" id="progress-percent">0%</span>
+          </div>
+          <p class="progress-summary" id="progress-detail">Henüz hedef yok</p>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard" id="dashboard-view">
+      <div class="dashboard-actions">
+        <button type="button" class="btn btn-primary btn-add-goals" id="open-library-btn">📚 Hedef Kütüphanesi</button>
+      </div>
+
+      <section class="card card-wide goals-panel" id="goals-section">
+        <div class="card-header">
+          <div class="card-icon goals-icon">🎯</div>
+          <div>
+            <h2>Günlük Hedefler</h2>
+            <p class="card-desc">Kategorilere göre gruplandı — gerçekleşeni gir</p>
+          </div>
+        </div>
+
+        <div id="goals-by-category"></div>
+        <p id="goals-empty" class="empty-text hidden">Henüz hedef yok. Panoyu düzenlemek için <strong>+ Hedef Ekle</strong>'ye dokun.</p>
+
+        <details class="template-manager add-new-goal-btn">
+          <summary>⚙️ Tek hedef ekle / yönet</summary>
+          <div class="template-manager-body">
+            <form id="goal-form" class="add-form">
+              <input type="text" id="goal-name" placeholder="Hedef adı" maxlength="100" required>
+              <div class="form-row">
+                <select id="goal-category" class="select-input" required></select>
+                <input type="number" id="goal-target" placeholder="Hedef değer" min="0.01" step="any" required>
+              </div>
+              <input type="text" id="goal-unit" placeholder="Birim (dakika, litre)" maxlength="20">
+              <input type="text" id="goal-guide-desc" placeholder="Rehber açıklaması (opsiyonel)" maxlength="300">
+              <input type="url" id="goal-guide-video" placeholder="Video linki (opsiyonel)" maxlength="500">
+              <button type="submit" class="btn btn-primary btn-block">Hedef Ekle</button>
+            </form>
+            <ul id="goals-manage-list" class="template-list"></ul>
+            <p id="goals-manage-empty" class="empty-text">Tanımlı hedef yok.</p>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <main class="library hidden" id="library-view">
+      <section class="card card-wide">
+        <button type="button" class="btn btn-primary btn-back-dash" id="back-to-dash-btn">
+          <span class="btn-back-arrow">←</span> Panoma Dön
+        </button>
+        <div class="card-header">
+          <div class="card-icon library-icon">📚</div>
+          <div>
+            <h2>Hedef Kütüphanesi</h2>
+            <p class="card-desc">Tüm hedefleri keşfet ve panona ekle</p>
+          </div>
+        </div>
+        <div id="library-list"></div>
+
+        <div class="lib-custom">
+          <h3 class="lib-custom-title">➕ Özel Hedef Ekle</h3>
+          <p class="lib-custom-desc">Havuzda olmayan kendi hedefini oluştur.</p>
+          <form id="lib-custom-form" class="add-form">
+            <input type="text" id="lib-custom-name" placeholder="Hedef adı" maxlength="100" required>
+            <div class="form-row">
+              <select id="lib-custom-category" class="select-input" required></select>
+              <input type="number" id="lib-custom-target" placeholder="Hedef değer" min="0.01" step="any" required>
+            </div>
+            <input type="text" id="lib-custom-unit" placeholder="Birim (dakika, litre)" maxlength="20">
+            <button type="submit" class="btn btn-primary btn-block">Panoma Ekle</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+    <footer class="footer"><p>Veriler tarayıcında tarih bazlı saklanır.</p></footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
