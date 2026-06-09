@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hayat Panosu</title>
-  <link rel="stylesheet" href="styles.css?v=20260610">
+  <link rel="stylesheet" href="styles.css?v=20260615">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -53,6 +53,7 @@
               <select id="wizard-goal-category" class="select-input"></select>
               <input type="text" id="wizard-goal-unit" placeholder="Birim (dakika, litre)" maxlength="20">
             </div>
+            <input type="text" id="wizard-goal-why" placeholder="Bu hedef senin için neden önemli?" maxlength="500">
             <button type="submit" class="btn btn-ghost btn-block">Listeye Ekle</button>
           </form>
           <ul id="wizard-draft-list" class="template-list"></ul>
@@ -80,6 +81,26 @@
         <input type="text" id="name-edit-input" placeholder="Adın" maxlength="40" autocomplete="given-name">
         <button type="submit" class="btn btn-primary btn-block">Kaydet</button>
       </form>
+    </div>
+  </div>
+
+  <div id="why-modal" class="modal-overlay hidden">
+    <div class="modal modal-compact">
+      <button type="button" class="modal-close" id="why-close" aria-label="Kapat">✕</button>
+      <h3>💭 Neden?</h3>
+      <p class="why-goal-name" id="why-goal-name"></p>
+      <div id="why-read-view">
+        <p class="why-empty-text" id="why-empty-hint">Bu hedef için henüz bir neden eklenmedi.</p>
+        <p class="why-text-display" id="why-text-display"></p>
+      </div>
+      <form id="why-form" class="why-form hidden">
+        <textarea id="why-input" maxlength="500" rows="4" placeholder="Bu hedef senin için neden önemli?"></textarea>
+        <div class="why-form-actions">
+          <button type="button" class="btn btn-ghost" id="why-cancel-edit">İptal</button>
+          <button type="submit" class="btn btn-primary">Kaydet</button>
+        </div>
+      </form>
+      <button type="button" class="btn btn-ghost btn-block" id="why-edit-btn">Düzenle / Ekle</button>
     </div>
   </div>
 
@@ -138,6 +159,11 @@
             <div class="progress-fill" id="progress-fill"></div>
           </div>
         </div>
+        <div class="stat-card stat-gains" id="todays-gains-card">
+          <span class="gains-title">🌟 Bugünün Kazancı</span>
+          <ul class="gains-list hidden" id="todays-gains-list"></ul>
+          <p class="gains-empty" id="todays-gains-empty">Bugün henüz bir ilerleme kaydetmedin.</p>
+        </div>
       </div>
     </header>
 
@@ -168,6 +194,7 @@
                 <input type="number" id="goal-target" placeholder="Hedef değer" min="0.01" step="any" required>
               </div>
               <input type="text" id="goal-unit" placeholder="Birim (dakika, litre)" maxlength="20">
+              <input type="text" id="goal-why" placeholder="Bu hedef senin için neden önemli?" maxlength="500">
               <input type="text" id="goal-guide-desc" placeholder="Rehber açıklaması (opsiyonel)" maxlength="300">
               <input type="url" id="goal-guide-video" placeholder="Video linki (opsiyonel)" maxlength="500">
               <button type="submit" class="btn btn-primary btn-block">Hedef Ekle</button>
@@ -217,6 +244,7 @@
               <option value="diger">diğer</option>
             </select>
             <input type="text" id="lib-custom-unit-other" class="lib-unit-other" placeholder="Özel birim yaz" maxlength="20">
+            <input type="text" id="lib-custom-why" placeholder="Bu hedef senin için neden önemli?" maxlength="500">
             <button type="submit" class="btn btn-primary btn-block">Panoma Ekle</button>
           </form>
         </div>
@@ -227,6 +255,6 @@
     <footer class="footer"><p>Veriler tarayıcında tarih bazlı saklanır.</p></footer>
   </div>
 
-  <script src="app.js?v=20260610"></script>
+  <script src="app.js?v=20260615"></script>
 </body>
 </html>

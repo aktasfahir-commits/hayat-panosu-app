@@ -33,6 +33,52 @@ const DEFAULT_GOALS = {
   duzen: { name: 'Düzen', unit: 'dakika', icon: '🧹', suggest: 15, category: 'yasam', guide: { description: 'Yaşam alanını düzenlemeye her gün biraz zaman ayır.', videoUrl: '' } },
 };
 
+// Neden alanı placeholder önerileri (yalnızca ipucu; kaydedilmez).
+const WHY_PLACEHOLDERS = {
+  adim: 'Daha fit ve hareketli olmak istiyorum',
+  mekik: 'Karın kaslarımı güçlendirmek istiyorum',
+  kosu: 'Dayanıklılığımı artırmak istiyorum',
+  su: 'Daha enerjik hissetmek istiyorum',
+  uyku: 'Gün boyunca daha dinç kalmak istiyorum',
+  vitamin: 'Sağlığımı desteklemek istiyorum',
+  nefes: 'Stresimi azaltmak istiyorum',
+  meditasyon: 'Zihnimi daha sakin tutmak istiyorum',
+  sukur: 'Hayata daha olumlu bakmak istiyorum',
+  kitap: 'Daha bilgili olmak istiyorum',
+  dil: 'Yurt dışına çıkabilmek istiyorum',
+  ders: 'Kariyerimde ilerlemek istiyorum',
+  para: "2027'de ev peşinatı oluşturmak istiyorum",
+  gorevler: 'İşleri zamanında bitirmek istiyorum',
+  duzen: 'Daha sakin bir yaşam alanı istiyorum',
+};
+
+const CATEGORY_WHY_PLACEHOLDERS = {
+  spor: 'Daha fit ve hareketli olmak istiyorum',
+  saglik: 'Daha enerjik hissetmek istiyorum',
+  zihin: 'Zihnimi daha sakin tutmak istiyorum',
+  gelisim: 'Daha bilgili olmak istiyorum',
+  yasam: 'Hayatımda bir hedefe ulaşmak istiyorum',
+};
+
+function getWhyPlaceholder({ defaultKey, category } = {}) {
+  if (defaultKey && WHY_PLACEHOLDERS[defaultKey]) return WHY_PLACEHOLDERS[defaultKey];
+  if (category && CATEGORY_WHY_PLACEHOLDERS[category]) return CATEGORY_WHY_PLACEHOLDERS[category];
+  return 'Bu hedef senin için neden önemli?';
+}
+
+function setWhyPlaceholder(inputEl, ctx) {
+  if (inputEl) inputEl.placeholder = getWhyPlaceholder(ctx);
+}
+
+const WHY_PREVIEW_MAX = 45;
+
+function truncateWhy(text, max = WHY_PREVIEW_MAX) {
+  const t = (text || '').trim();
+  if (!t) return '';
+  if (t.length <= max) return t;
+  return `${t.slice(0, max).trimEnd()}...`;
+}
+
 let data = { version: 8, goals: [], days: {}, setupComplete: false };
 let selectedDate = today();
 let currentView = 'dashboard'; // 'dashboard' | 'library'
@@ -85,6 +131,7 @@ function getDailyGoals(date) {
     actual: getActual(date, g.id),
     defaultKey: g.defaultKey || null,
     guide: g.guide || { description: '', videoUrl: '' },
+    why: (g.why || '').trim(),
   }));
 }
 
@@ -144,6 +191,7 @@ function migrateToV8(parsed) {
       icon: g.icon || (g.defaultKey && DEFAULT_GOALS[g.defaultKey]?.icon) || '',
       ...(g.defaultKey ? { defaultKey: g.defaultKey } : {}),
       guide: g.guide || (g.defaultKey && DEFAULT_GOALS[g.defaultKey]?.guide) || { description: '', videoUrl: '' },
+      ...(g.why?.trim() ? { why: g.why.trim() } : {}),
     }))
     .filter((g) => g.name && g.target > 0);
 
@@ -182,6 +230,11 @@ function saveData() {
   pruneEmptyDays();
   const payload = { ...data };
   if (!payload.userName) delete payload.userName;
+  payload.goals = payload.goals.map((g) => {
+    const goal = { ...g };
+    if (!goal.why?.trim()) delete goal.why;
+    return goal;
+  });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
 
@@ -327,6 +380,32 @@ function populateCategorySelects() {
   });
 }
 
+function syncGoalFormWhyPlaceholder() {
+  setWhyPlaceholder(document.getElementById('goal-why'), {
+    category: document.getElementById('goal-category')?.value,
+  });
+}
+
+function syncLibCustomWhyPlaceholder() {
+  setWhyPlaceholder(document.getElementById('lib-custom-why'), {
+    category: document.getElementById('lib-custom-category')?.value,
+  });
+}
+
+function syncWizardWhyPlaceholder() {
+  setWhyPlaceholder(document.getElementById('wizard-goal-why'), {
+    category: document.getElementById('wizard-goal-category')?.value,
+  });
+}
+
+function initWhyPlaceholders() {
+  syncGoalFormWhyPlaceholder();
+  syncLibCustomWhyPlaceholder();
+  document.getElementById('goal-category')?.addEventListener('change', syncGoalFormWhyPlaceholder);
+  document.getElementById('lib-custom-category')?.addEventListener('change', syncLibCustomWhyPlaceholder);
+  document.getElementById('wizard-goal-category')?.addEventListener('change', syncWizardWhyPlaceholder);
+}
+
 /* ---------------- Dashboard render ---------------- */
 
 function renderGoalCard(g) {
@@ -336,12 +415,24 @@ function renderGoalCard(g) {
   const catStreak = getCategoryStreak(g.category);
   const unit = g.unit ? ` ${escapeHtml(g.unit)}` : '';
   const hasGuide = g.guide?.description || g.guide?.videoUrl;
+  const whyPreview = truncateWhy(g.why);
+  const whyLine = whyPreview
+    ? `<span class="goal-card-why-preview" data-action="show-why" data-id="${g.id}" title="${escapeHtml(g.why)}">💭 ${escapeHtml(whyPreview)}</span>`
+    : '';
+  const whyMotivation = g.why?.trim() ? whyMotivationMessage(g.why) : '';
+  const whyMotivationLine = whyMotivation
+    ? `<span class="goal-card-why-motivation">${escapeHtml(whyMotivation)}</span>`
+    : '';
 
   return `
     <article class="goal-card cat-${g.category}" id="goal-card-${g.id}" style="--cat-from:${cat.from};--cat-to:${cat.to}">
       <div class="goal-card-top">
-        <span class="goal-card-name">${g.icon ? g.icon + ' ' : ''}${escapeHtml(g.name)}</span>
+        <div class="goal-card-head">
+          <span class="goal-card-name">${g.icon ? g.icon + ' ' : ''}${escapeHtml(g.name)}</span>
+          ${whyLine}
+        </div>
         <span class="goal-card-top-right">
+          <button type="button" class="btn-why" data-action="show-why" data-id="${g.id}" title="Hedefin arkasındaki neden" aria-label="Hedefin arkasındaki neden">💭 Neden?</button>
           ${hasGuide ? `<button type="button" class="btn-guide" data-action="show-guide" data-id="${g.id}" title="Nasıl yapılır?" aria-label="Nasıl yapılır?">?</button>` : ''}
           <span class="goal-card-points${p.exceeded ? ' exceeded' : ''}">+${pts.total}${p.exceeded ? ' ⭐' : ''}</span>
         </span>
@@ -359,6 +450,7 @@ function renderGoalCard(g) {
           <span class="goal-card-progress-col">
             <span class="goal-card-percent">%${p.percent}</span>
             <span class="goal-card-motivation">${goalMotivationMessage(g, p.percent, selectedDate)}</span>
+            ${whyMotivationLine}
           </span>
         </span>
       </div>
@@ -565,6 +657,152 @@ function goalMotivationMessage(goal, percent, date) {
   return stablePick(seed, GENERAL_MOTIVATION[tier]);
 }
 
+// Neden metninden basit şablon motivasyon (AI değil).
+const WHY_MOTIVATION_RULES = [
+  { test: /ev|peşinat|pesinat|konut/i, msg: 'Ev hedefin bugün biraz daha yaklaştı.' },
+  { test: /bilgili|bilgi|kitap|öğren|ogren|okum/i, msg: 'Bilgili olma hedefin için güzel bir adım.' },
+  { test: /enerjik|dinç|dinc/i, msg: 'Enerjik hissetme yolunda güzel bir adım.' },
+  { test: /fit|hareketli|adım|adim|kondisyon|spor|koşu|kosu|mekik/i, msg: 'Fit ve hareketli olma hedefin için güzel bir adım.' },
+  { test: /sakin|huzur|meditasyon|stres|rahat|zihin|nefes/i, msg: 'Zihnini sakin tutma hedefin için güzel bir adım.' },
+  { test: /para|biriktir|tasarruf|finans|kumbara/i, msg: 'Biriktirme hedefin bugün biraz daha yaklaştı.' },
+  { test: /kariyer|ders|çalış|calis|gelişim|gelisim/i, msg: 'Gelişim hedefin için güzel bir adım.' },
+  { test: /sağlık|saglik|uyku|vitamin|su\b/i, msg: 'Sağlıklı yaşam hedefin için güzel bir adım.' },
+  { test: /düzen|duzen|organize|temiz/i, msg: 'Düzenli bir yaşam hedefin için güzel bir adım.' },
+  { test: /şükür|sukur|minnet|olumlu/i, msg: 'Olumlu bakış hedefin için güzel bir adım.' },
+  { test: /dil|yurt\s*dış|yurt\s*dis|ingilizce/i, msg: 'Dil hedefin için güzel bir adım.' },
+];
+
+function capitalizeTurkish(text) {
+  if (!text) return text;
+  return text.charAt(0).toLocaleUpperCase('tr-TR') + text.slice(1);
+}
+
+function whyMotivationMessage(why) {
+  const w = (why || '').trim();
+  if (!w) return '';
+  const lower = w.toLocaleLowerCase('tr-TR');
+
+  for (const rule of WHY_MOTIVATION_RULES) {
+    if (rule.test.test(lower)) return rule.msg;
+  }
+
+  const dahaOlmak = lower.match(/daha\s+(.+?)\s+olmak\s+istiyorum/);
+  if (dahaOlmak) {
+    return `${capitalizeTurkish(dahaOlmak[1].trim())} olma hedefin için güzel bir adım.`;
+  }
+
+  const olmak = lower.match(/(.+?)\s+olmak\s+istiyorum/);
+  if (olmak) {
+    const topic = olmak[1].replace(/^daha\s+/, '').trim();
+    if (topic.length > 2 && topic.length < 45) {
+      return `${capitalizeTurkish(topic)} olma hedefin için güzel bir adım.`;
+    }
+  }
+
+  const hedef = lower.match(/(.+?)\s+(oluşturmak|yapmak|başarmak|basarmak|ulaşmak|ulasmak)\s+istiyorum/);
+  if (hedef) {
+    const topic = hedef[1].trim();
+    if (/ev|peşinat|pesinat/.test(topic)) return 'Ev hedefin bugün biraz daha yaklaştı.';
+    if (topic.length > 2 && topic.length < 50) {
+      return `${capitalizeTurkish(topic)} hedefin bugün biraz daha yaklaştı.`;
+    }
+  }
+
+  return 'Bu hedef için güzel bir ilerleme kaydettin.';
+}
+
+// Bugünün Kazancı — doğal Türkçe ilerleme satırları.
+const DEFAULT_KEY_GAINS = {
+  adim: (n) => `${formatNumber(n)} adım attın`,
+  su: (n) => `${formatNumber(n)} litre su içtin`,
+  kitap: (n) => `${formatNumber(n)} sayfa okudun`,
+  meditasyon: (n) => `${formatNumber(n)} dakika meditasyon yaptın`,
+  para: (n) => `${formatNumber(n)} TL biriktirdin`,
+  kosu: (n) => `${formatNumber(n)} dakika koştun`,
+  mekik: (n) => `${formatNumber(n)} mekik yaptın`,
+  uyku: (n) => `${formatNumber(n)} saat uyudun`,
+  vitamin: (n) => `${formatNumber(n)} vitamin aldın`,
+  nefes: (n) => `${formatNumber(n)} dakika nefes egzersizi yaptın`,
+  sukur: (n) => `${formatNumber(n)} madde şükür yazdın`,
+  dil: (n) => `${formatNumber(n)} dakika dil çalıştın`,
+  ders: (n) => `${formatNumber(n)} dakika ders çalıştın`,
+  gorevler: (n) => `${formatNumber(n)} görev tamamladın`,
+  duzen: (n) => `${formatNumber(n)} dakika düzen yaptın`,
+};
+
+const UNIT_GAIN_PHRASES = {
+  adım: (n) => `${formatNumber(n)} adım attın`,
+  adim: (n) => `${formatNumber(n)} adım attın`,
+  litre: (n) => `${formatNumber(n)} litre su içtin`,
+  sayfa: (n) => `${formatNumber(n)} sayfa okudun`,
+  dakika: (n, goal) => {
+    const name = (goal.name || '').toLocaleLowerCase('tr-TR');
+    if (/meditasyon/.test(name)) return `${formatNumber(n)} dakika meditasyon yaptın`;
+    if (/nefes/.test(name)) return `${formatNumber(n)} dakika nefes egzersizi yaptın`;
+    if (/dil/.test(name)) return `${formatNumber(n)} dakika dil çalıştın`;
+    if (/ders|çalış|calis/.test(name)) return `${formatNumber(n)} dakika ders çalıştın`;
+    if (/düzen|duzen/.test(name)) return `${formatNumber(n)} dakika düzen yaptın`;
+    if (/koşu|kosu/.test(name)) return `${formatNumber(n)} dakika koştun`;
+    return `${formatNumber(n)} dakika yaptın`;
+  },
+  '₺': (n) => `${formatNumber(n)} TL biriktirdin`,
+  tl: (n) => `${formatNumber(n)} TL biriktirdin`,
+  adet: (n, goal) => {
+    const name = (goal.name || '').toLocaleLowerCase('tr-TR');
+    if (/vitamin/.test(name)) return `${formatNumber(n)} vitamin aldın`;
+    return `${formatNumber(n)} adet tamamladın`;
+  },
+  tekrar: (n) => `${formatNumber(n)} mekik yaptın`,
+  saat: (n, goal) => {
+    const name = (goal.name || '').toLocaleLowerCase('tr-TR');
+    if (/uyku/.test(name)) return `${formatNumber(n)} saat uyudun`;
+    return `${formatNumber(n)} saat tamamladın`;
+  },
+  madde: (n) => `${formatNumber(n)} madde şükür yazdın`,
+  görev: (n) => `${formatNumber(n)} görev tamamladın`,
+  gorev: (n) => `${formatNumber(n)} görev tamamladın`,
+  km: (n) => `${formatNumber(n)} km koştun`,
+  gram: (n) => `${formatNumber(n)} gram tamamladın`,
+  saniye: (n) => `${formatNumber(n)} saniye yaptın`,
+  defa: (n) => `${formatNumber(n)} defa yaptın`,
+  gün: (n) => `${formatNumber(n)} gün tamamladın`,
+  gun: (n) => `${formatNumber(n)} gün tamamladın`,
+};
+
+function todaysGainLine(goal) {
+  const n = goal.actual;
+  if (goal.defaultKey && DEFAULT_KEY_GAINS[goal.defaultKey]) {
+    return DEFAULT_KEY_GAINS[goal.defaultKey](n);
+  }
+  const unitKey = (goal.unit || '').trim().toLocaleLowerCase('tr-TR');
+  if (unitKey && UNIT_GAIN_PHRASES[unitKey]) {
+    return UNIT_GAIN_PHRASES[unitKey](n, goal);
+  }
+  if (unitKey) return `${formatNumber(n)} ${goal.unit} — ${goal.name}`;
+  return `${formatNumber(n)} ${goal.name} kaydettin`;
+}
+
+function renderTodaysGains() {
+  const goals = getDailyGoals(selectedDate).filter((g) => g.actual > 0);
+  const list = document.getElementById('todays-gains-list');
+  const empty = document.getElementById('todays-gains-empty');
+  const prefix = selectedDate === today() ? 'Bugün' : 'Bu gün';
+
+  if (!goals.length) {
+    list.innerHTML = '';
+    list.classList.add('hidden');
+    empty.textContent = `${prefix} henüz bir ilerleme kaydetmedin.`;
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  list.classList.remove('hidden');
+  list.innerHTML = goals.map((g) =>
+    `<li class="gains-item"><span class="gains-check" aria-hidden="true">✓</span><span>${escapeHtml(todaysGainLine(g))}</span></li>`
+  ).join('');
+}
+
 function updateStats() {
   const goals = getDailyGoals(selectedDate);
   const total = goals.length;
@@ -577,6 +815,7 @@ function updateStats() {
     total > 0 ? `${prefix} ${progressed} / ${total} hedef ilerledi` : 'Henüz hedef yok';
   // Yüzdeye göre motivasyon mesajı — her zaman dolu ve görünür.
   document.getElementById('progress-motivation').textContent = motivationMessage(prog.percent);
+  renderTodaysGains();
 }
 
 function renderManageItem(g) {
@@ -680,7 +919,7 @@ function addFromLibrary(key) {
 
 /* ---------------- Hedef işlemleri ---------------- */
 
-function addGoal({ name, target, unit, category, defaultKey, icon, guide }) {
+function addGoal({ name, target, unit, category, defaultKey, icon, guide, why }) {
   const goal = {
     id: defaultKey ? defaultGoalId(defaultKey) : generateId(),
     name,
@@ -691,6 +930,8 @@ function addGoal({ name, target, unit, category, defaultKey, icon, guide }) {
     guide: guide || { description: '', videoUrl: '' },
     ...(defaultKey ? { defaultKey } : {}),
   };
+  const whyText = (why || '').trim();
+  if (whyText) goal.why = whyText;
   // Aynı default hedef iki kez eklenmesin.
   if (defaultKey && data.goals.some((g) => g.defaultKey === defaultKey)) return null;
   data.goals.push(goal);
@@ -711,6 +952,16 @@ function updateGoalTarget(goalId, rawValue) {
   const goal = findGoal(goalId);
   if (!goal) return false;
   goal.target = value;
+  saveData();
+  return true;
+}
+
+function updateGoalWhy(goalId, text) {
+  const goal = findGoal(goalId);
+  if (!goal) return false;
+  const trimmed = (text || '').trim();
+  if (trimmed) goal.why = trimmed;
+  else delete goal.why;
   saveData();
   return true;
 }
@@ -772,6 +1023,48 @@ function showGuide(goalId) {
   document.getElementById('guide-modal').classList.remove('hidden');
 }
 
+let whyModalGoalId = null;
+
+function renderWhyReadView(goalId) {
+  const g = findGoal(goalId);
+  if (!g) return;
+  const why = (g.why || '').trim();
+  document.getElementById('why-goal-name').textContent = g.name;
+  document.getElementById('why-empty-hint').classList.toggle('hidden', !!why);
+  const display = document.getElementById('why-text-display');
+  display.textContent = why;
+  display.classList.toggle('hidden', !why);
+}
+
+function showWhyViewMode() {
+  document.getElementById('why-read-view').classList.remove('hidden');
+  document.getElementById('why-form').classList.add('hidden');
+  document.getElementById('why-edit-btn').classList.remove('hidden');
+}
+
+function showWhyEditMode() {
+  const g = findGoal(whyModalGoalId);
+  const input = document.getElementById('why-input');
+  input.value = (g?.why || '').trim();
+  setWhyPlaceholder(input, { defaultKey: g?.defaultKey, category: g?.category });
+  document.getElementById('why-read-view').classList.add('hidden');
+  document.getElementById('why-form').classList.remove('hidden');
+  document.getElementById('why-edit-btn').classList.add('hidden');
+  input.focus();
+}
+
+function openWhyModal(goalId) {
+  whyModalGoalId = goalId;
+  renderWhyReadView(goalId);
+  showWhyViewMode();
+  document.getElementById('why-modal').classList.remove('hidden');
+}
+
+function closeWhyModal() {
+  whyModalGoalId = null;
+  document.getElementById('why-modal').classList.add('hidden');
+}
+
 /* ---------------- Onboarding sihirbazı (3 adım) ---------------- */
 
 const WIZARD_META = [
@@ -831,6 +1124,7 @@ function renderWizardGoals() {
     const c = CATEGORIES[id];
     return `<option value="${id}">${c.icon} ${c.label}</option>`;
   }).join('');
+  syncWizardWhyPlaceholder();
 
   const customs = wizardSelectedGoals.filter((g) => g.custom);
   document.getElementById('wizard-draft-list').innerHTML = customs.map((g) => {
@@ -968,6 +1262,7 @@ function finishWizard() {
       defaultKey: g.defaultKey || undefined,
       icon: g.icon,
       guide: g.guide,
+      why: g.why,
     });
   });
   data.setupComplete = true;
@@ -991,6 +1286,7 @@ selectedDateInput.addEventListener('click', () => { selectedDateInput.showPicker
 function goHome() {
   selectedDate = today();
   document.getElementById('guide-modal').classList.add('hidden');
+  closeWhyModal();
   closeNameEditModal();
   document.querySelectorAll('.dashboard details[open]').forEach((d) => d.removeAttribute('open'));
   switchView('dashboard');
@@ -1026,8 +1322,9 @@ document.getElementById('lib-custom-form').addEventListener('submit', (e) => {
   const category = document.getElementById('lib-custom-category').value;
   const target = parseFloat(document.getElementById('lib-custom-target').value);
   const unit = getLibCustomUnit();
+  const why = document.getElementById('lib-custom-why').value.trim();
   if (!name || Number.isNaN(target) || target <= 0) return;
-  addGoal({ name, target, unit, category, guide: { description: '', videoUrl: '' } });
+  addGoal({ name, target, unit, category, guide: { description: '', videoUrl: '' }, why });
   data.setupComplete = true;
   saveData();
   e.target.reset();
@@ -1071,6 +1368,7 @@ goalsContainer.addEventListener('click', (e) => {
   if (!el) return;
   const { action, id } = el.dataset;
   if (action === 'show-guide') { showGuide(id); return; }
+  if (action === 'show-why') { openWhyModal(id); return; }
   if (action === 'save-goal') { saveGoalFromInput(id); return; }
   if (action === 'edit-target') {
     const row = document.getElementById(`edit-${id}`);
@@ -1107,10 +1405,11 @@ document.getElementById('goal-form').addEventListener('submit', (e) => {
   const category = document.getElementById('goal-category').value;
   const target = parseFloat(document.getElementById('goal-target').value);
   const unit = document.getElementById('goal-unit').value.trim();
+  const why = document.getElementById('goal-why').value.trim();
   const description = document.getElementById('goal-guide-desc').value.trim();
   const videoUrl = document.getElementById('goal-guide-video').value.trim();
   if (!name || Number.isNaN(target) || target <= 0) return;
-  addGoal({ name, target, unit, category, guide: { description, videoUrl } });
+  addGoal({ name, target, unit, category, guide: { description, videoUrl }, why });
   data.setupComplete = true;
   saveData();
   e.target.reset();
@@ -1157,6 +1456,7 @@ document.getElementById('wizard-goal-form').addEventListener('submit', (e) => {
   const name = document.getElementById('wizard-goal-name').value.trim();
   const category = document.getElementById('wizard-goal-category').value;
   const unit = document.getElementById('wizard-goal-unit').value.trim();
+  const why = document.getElementById('wizard-goal-why').value.trim();
   if (!name || !category) return;
   wizardSelectedGoals.push({
     uid: generateId(),
@@ -1167,6 +1467,7 @@ document.getElementById('wizard-goal-form').addEventListener('submit', (e) => {
     category,
     target: 0,
     guide: { description: '', videoUrl: '' },
+    ...(why ? { why } : {}),
     custom: true,
   });
   e.target.reset();
@@ -1217,7 +1518,28 @@ document.getElementById('name-edit-form').addEventListener('submit', (e) => {
   showToast(getUserName() ? `Merhaba ${getUserName()}! 👋` : 'Başlık güncellendi');
 });
 
+document.getElementById('why-close').addEventListener('click', closeWhyModal);
+document.getElementById('why-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'why-modal') closeWhyModal();
+});
+document.getElementById('why-edit-btn').addEventListener('click', showWhyEditMode);
+document.getElementById('why-cancel-edit').addEventListener('click', () => {
+  if (whyModalGoalId) {
+    renderWhyReadView(whyModalGoalId);
+    showWhyViewMode();
+  }
+});
+document.getElementById('why-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!whyModalGoalId) return;
+  updateGoalWhy(whyModalGoalId, document.getElementById('why-input').value);
+  renderWhyReadView(whyModalGoalId);
+  showWhyViewMode();
+  showToast('Neden kaydedildi 💭');
+});
+
 populateCategorySelects();
+initWhyPlaceholders();
 loadData();
 render();
 // İlk kullanım: önce karşılama, ardından mevcut onboarding sihirbazı.
