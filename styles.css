@@ -466,6 +466,51 @@ body {
 
 .goal-card-percent { font-weight: 700; color: var(--cat-from); }
 
+.goal-card-target { display: inline-flex; align-items: center; }
+
+.btn-edit-target {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 2px 4px;
+  margin-left: 4px;
+  opacity: 0.65;
+  transition: opacity 0.15s ease;
+}
+
+.btn-edit-target:hover { opacity: 1; }
+
+.goal-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 9px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+
+.goal-edit-row.hidden { display: none; }
+
+.goal-edit-row label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.goal-edit-input {
+  width: 90px;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
 .goal-streak-mini { font-size: 0.75rem; font-weight: 600; color: #e67e22; }
 
 .btn-guide {

@@ -300,11 +300,21 @@ function renderGoalCard(g) {
         <div class="goal-card-bar-fill" style="width:${p.barWidth}%"></div>
       </div>
       <div class="goal-card-meta">
-        <span><strong>${formatNumber(g.actual || 0)}</strong> / ${formatNumber(g.target)}${unit}</span>
+        <span class="goal-card-target">
+          <strong>${formatNumber(g.actual || 0)}</strong> / ${formatNumber(g.target)}${unit}
+          <button type="button" class="btn-edit-target" data-action="edit-target" data-id="${g.id}" title="Hedef değerini düzenle" aria-label="Hedef değerini düzenle">✏️</button>
+        </span>
         <span class="goal-card-meta-right">
           <span class="goal-streak-mini">🔥 ${catStreak}</span>
           <span class="goal-card-percent">%${p.percent}</span>
         </span>
+      </div>
+      <div class="goal-edit-row hidden" id="edit-${g.id}">
+        <label for="edit-input-${g.id}">Yeni hedef</label>
+        <input type="number" class="goal-edit-input" id="edit-input-${g.id}" value="${formatNumber(g.target)}" min="0.01" step="any">
+        ${g.unit ? `<span class="unit-label">${escapeHtml(g.unit)}</span>` : ''}
+        <button type="button" class="btn btn-primary btn-sm" data-action="save-target" data-id="${g.id}">Kaydet</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-action="cancel-target" data-id="${g.id}">İptal</button>
       </div>
       <div class="goal-card-input">
         <div class="actual-input-wrap">
@@ -499,6 +509,17 @@ function deleteGoal(id) {
   data.goals = data.goals.filter((g) => g.id !== id);
   Object.values(data.days).forEach((d) => delete d.progress?.[id]);
   saveData();
+}
+
+// Yalnızca hedef değerini günceller (ad ve birim değişmez).
+function updateGoalTarget(goalId, rawValue) {
+  const value = parseFloat(rawValue);
+  if (Number.isNaN(value) || value <= 0) return false;
+  const goal = findGoal(goalId);
+  if (!goal) return false;
+  goal.target = value;
+  saveData();
+  return true;
 }
 
 function updateGoalProgress(goalId, rawValue) {
@@ -815,8 +836,33 @@ goalsContainer.addEventListener('change', (e) => {
 });
 
 goalsContainer.addEventListener('click', (e) => {
-  if (e.target.dataset.action === 'show-guide') { showGuide(e.target.dataset.id); return; }
-  if (e.target.dataset.action === 'save-goal') saveGoalFromInput(e.target.dataset.id);
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const { action, id } = el.dataset;
+  if (action === 'show-guide') { showGuide(id); return; }
+  if (action === 'save-goal') { saveGoalFromInput(id); return; }
+  if (action === 'edit-target') {
+    const row = document.getElementById(`edit-${id}`);
+    if (!row) return;
+    row.classList.remove('hidden');
+    const input = document.getElementById(`edit-input-${id}`);
+    if (input) { input.focus(); input.select(); }
+    return;
+  }
+  if (action === 'cancel-target') {
+    document.getElementById(`edit-${id}`)?.classList.add('hidden');
+    return;
+  }
+  if (action === 'save-target') {
+    const input = document.getElementById(`edit-input-${id}`);
+    if (input && updateGoalTarget(id, input.value)) {
+      render();
+      showSavedIndicator(id);
+      showToast('Hedef değeri güncellendi');
+    } else {
+      showToast('Geçerli bir hedef değeri gir.');
+    }
+  }
 });
 
 document.getElementById('guide-close').addEventListener('click', () => document.getElementById('guide-modal').classList.add('hidden'));
