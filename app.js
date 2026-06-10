@@ -228,6 +228,8 @@ function loadData() {
       };
       const name = (parsed.userName || '').trim();
       if (name) data.userName = name;
+      if (parsed.lastOpenDate) data.lastOpenDate = parsed.lastOpenDate;
+      if (parsed.lastReportShownDate) data.lastReportShownDate = parsed.lastReportShownDate;
       return;
     }
     migrateToV8(parsed || {});
@@ -319,6 +321,142 @@ function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
 
+function daysBetween(fromStr, toStr) {
+  const from = parseDateStr(fromStr);
+  const to = parseDateStr(toStr);
+  const utcFrom = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+  const utcTo = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+  return Math.round((utcTo - utcFrom) / 86400000);
+}
+
+function markAppOpened(todayStr) {
+  data.lastOpenDate = todayStr;
+  saveData();
+}
+
+function markDailyReportShown(todayStr) {
+  data.lastReportShownDate = todayStr;
+  data.lastOpenDate = todayStr;
+  saveData();
+}
+
+/* ---------------- Günlük giriş raporu ---------------- */
+
+function yesterdayProgressLine(g) {
+  const actual = g.actual;
+  if (!(actual > 0)) return null;
+  const p = getProgress(actual, g.target);
+  const unit = (g.unit || '').toLocaleLowerCase('tr-TR');
+
+  if (unit === 'sayfa') {
+    return `${g.name} hedefinde ${formatNumber(actual)} sayfa ilerledin`;
+  }
+  if (p.percent >= 100) {
+    return `${g.name} hedefini tamamladın`;
+  }
+  if (p.percent >= 40) {
+    return `${g.name} hedefinin %${p.percent}'ini tamamladın`;
+  }
+  return `${g.name} hedefinin %${p.percent}'ine ulaştın`;
+}
+
+function buildYesterdayReportHtml(yesterday) {
+  const goals = getDailyGoals(yesterday)
+    .filter((g) => g.actual > 0)
+    .sort((a, b) => getProgress(b.actual, b.target).percent - getProgress(a.actual, a.target).percent);
+
+  const lines = goals.map(yesterdayProgressLine).filter(Boolean).slice(0, 5);
+  const list = lines.map((line) =>
+    `<li class="daily-report-item"><span class="daily-report-check">✓</span><span>${escapeHtml(line)}</span></li>`
+  ).join('');
+
+  return buildYesterdayReportShell(list);
+}
+
+function buildYesterdayReportShell(listHtml) {
+  return `
+    <div class="daily-report-header">
+      <p class="daily-report-lead">🌟 Dün Boş Geçmedi</p>
+    </div>
+    <ul class="daily-report-list">${listHtml}</ul>
+    <p class="daily-report-footer">Bugün devam etmeye ne dersin?<br>Küçük bir adım bile yeter.</p>`;
+}
+
+function buildDailyReportContent() {
+  const todayStr = today();
+  const yesterday = shiftDate(todayStr, -1);
+  const daysAway = data.lastOpenDate ? daysBetween(data.lastOpenDate, todayStr) : 1;
+
+  if (dayHasActivity(yesterday)) {
+    return { type: 'yesterday', html: buildYesterdayReportHtml(yesterday) };
+  }
+  if (daysAway >= 3) {
+    return {
+      type: 'absent',
+      html: `
+        <div class="daily-report-header daily-report-header-absent">
+          <p class="daily-report-lead">👋 Seni bir süredir görmüyorduk.</p>
+        </div>
+        <p class="daily-report-body">Hayat bazen yoğunlaşır.<br>Hedeflerin burada seni bekliyor.</p>`,
+    };
+  }
+  if (daysAway >= 1) {
+    return {
+      type: 'fresh',
+      html: `
+        <div class="daily-report-header daily-report-header-fresh">
+          <p class="daily-report-lead">🌱 Yeni bir gün başladı.</p>
+        </div>
+        <p class="daily-report-body">Dün burada değildin ama sorun değil.<br>Bugün yeniden başlayabilirsin.</p>`,
+    };
+  }
+  return null;
+}
+
+function openDailyReportModal(html) {
+  document.getElementById('daily-report-content').innerHTML = html;
+  document.getElementById('daily-report-overlay').classList.remove('hidden');
+  document.body.classList.add('wizard-open');
+}
+
+function showDailyReport() {
+  const content = buildDailyReportContent();
+  if (!content) return false;
+  openDailyReportModal(content.html);
+  return true;
+}
+
+function closeDailyReport() {
+  document.getElementById('daily-report-overlay').classList.add('hidden');
+  document.body.classList.remove('wizard-open');
+}
+
+function maybeShowDailyReport() {
+  if (!data.setupComplete || !hasGoals()) {
+    markAppOpened(today());
+    return;
+  }
+
+  const todayStr = today();
+  if (data.lastReportShownDate === todayStr) {
+    markAppOpened(todayStr);
+    return;
+  }
+
+  const welcomeOpen = !document.getElementById('welcome-overlay').classList.contains('hidden');
+  const wizardOpen = !document.getElementById('wizard-overlay').classList.contains('hidden');
+  if (welcomeOpen || wizardOpen) {
+    markAppOpened(todayStr);
+    return;
+  }
+
+  if (showDailyReport()) {
+    markDailyReportShown(todayStr);
+  } else {
+    markAppOpened(todayStr);
+  }
+}
+
 /* ---------------- Kişiselleştirme (userName) ---------------- */
 
 function getUserName() {
@@ -392,6 +530,20 @@ function getProgress(actual, target) {
   const ratio = a / t;
   const percent = Math.round(ratio * 100);
   return { percent, barWidth: Math.min(100, percent), exceeded: ratio > 1 };
+}
+
+// Haftalık/aylık hedef tamamlandığında veya aşıldığında kart mesajı (günlük hedeflerde boş).
+function periodSuccessMessage(period, progressActual, target) {
+  const p = getProgress(progressActual, target);
+  if (period === 'weekly') {
+    if (p.exceeded) return '🔥 Haftalık hedefi aştın!';
+    if (p.percent >= 100) return '🎉 Bu haftalık hedef tamamlandı!';
+  }
+  if (period === 'monthly') {
+    if (p.exceeded) return '🚀 Aylık hedefi aştın!';
+    if (p.percent >= 100) return '🏆 Bu aylık hedef tamamlandı!';
+  }
+  return '';
 }
 
 function calcPoints(actual, target) {
@@ -506,6 +658,10 @@ function renderGoalCard(g) {
   const whyMotivationLine = whyMotivation
     ? `<span class="goal-card-why-motivation">${escapeHtml(whyMotivation)}</span>`
     : '';
+  const periodSuccess = periodSuccessMessage(g.period, progressActual, g.target);
+  const motivationLine = periodSuccess
+    ? `<span class="goal-card-period-success">${escapeHtml(periodSuccess)}</span>`
+    : `<span class="goal-card-motivation">${goalMotivationMessage(g, p.percent, selectedDate)}</span>`;
 
   return `
     <article class="goal-card cat-${g.category}" id="goal-card-${g.id}" style="--cat-from:${cat.from};--cat-to:${cat.to}">
@@ -533,7 +689,7 @@ function renderGoalCard(g) {
           <span class="goal-streak-mini">🔥 ${catStreak}</span>
           <span class="goal-card-progress-col">
             <span class="goal-card-percent">%${p.percent}</span>
-            <span class="goal-card-motivation">${goalMotivationMessage(g, p.percent, selectedDate)}</span>
+            ${motivationLine}
             ${whyMotivationLine}
           </span>
         </span>
@@ -1377,6 +1533,7 @@ selectedDateInput.addEventListener('click', () => { selectedDateInput.showPicker
 function goHome() {
   selectedDate = today();
   document.getElementById('guide-modal').classList.add('hidden');
+  closeDailyReport();
   closeWhyModal();
   closeNameEditModal();
   document.querySelectorAll('.dashboard details[open]').forEach((d) => d.removeAttribute('open'));
@@ -1650,9 +1807,15 @@ document.getElementById('why-form').addEventListener('submit', (e) => {
   showToast('Neden kaydedildi 💭');
 });
 
+document.getElementById('daily-report-start').addEventListener('click', closeDailyReport);
+
 populateCategorySelects();
 initWhyPlaceholders();
 loadData();
 render();
 // İlk kullanım: önce karşılama, ardından mevcut onboarding sihirbazı.
-if (!data.setupComplete && !hasGoals()) showWelcome();
+if (!data.setupComplete && !hasGoals()) {
+  showWelcome();
+} else {
+  maybeShowDailyReport();
+}
