@@ -1033,60 +1033,159 @@ body.wizard-open { overflow: hidden; }
 .wizard-wide { max-width: 520px; max-height: 90vh; overflow-y: auto; }
 
 /* Karşılama ekranı */
-.welcome-card { max-width: 420px; text-align: center; }
+.welcome-card {
+  max-width: 440px;
+  max-height: 92vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  text-align: center;
+  padding: 0 20px 20px;
+  border-color: rgba(255, 170, 50, 0.2);
+}
+
+.welcome-hero {
+  padding: 22px 20px 18px;
+  margin: 0 -20px 16px;
+  background: linear-gradient(165deg, #fffbf2 0%, #fff4df 45%, #ffe8c4 100%);
+  border-bottom: 1px solid rgba(255, 170, 50, 0.18);
+}
 
 .welcome-logo {
-  width: 64px; height: 64px;
-  margin: 0 auto 16px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 2rem;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #fff5e6, #ffe8cc);
-  border: 1px solid rgba(255, 140, 66, 0.25);
-}
-
-.welcome-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
-
-.welcome-subtitle {
-  font-size: 0.92rem;
-  color: var(--text-muted);
-  line-height: 1.6;
-  margin: 10px 0 22px;
-}
-
-.welcome-points {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  text-align: left;
-  margin-bottom: 26px;
-}
-
-.welcome-points li {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  justify-content: center;
+  font-size: 1.75rem;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff, #fff5e6);
+  border: 1px solid rgba(255, 140, 66, 0.3);
+  box-shadow: 0 4px 14px rgba(255, 140, 66, 0.15);
 }
 
-.welcome-check {
-  flex-shrink: 0;
-  width: 24px; height: 24px;
-  display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 50%;
-  background: #16a34a;
-  color: #fff;
-  font-size: 0.8rem;
+.welcome-title {
+  font-size: 1.35rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin: 0 0 10px;
+  color: #2d2a26;
 }
 
-.welcome-start { min-height: 50px; font-size: 1rem; font-weight: 700; }
+.welcome-intro {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #5c5c6e;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.welcome-steps {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  text-align: left;
+}
+
+.welcome-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fafcff 0%, #f4f8ff 100%);
+  border: 1px solid rgba(77, 163, 255, 0.14);
+  box-shadow: 0 2px 8px rgba(77, 163, 255, 0.06);
+}
+
+.welcome-step:nth-child(2) {
+  background: linear-gradient(135deg, #f6fef9 0%, #ecfdf5 100%);
+  border-color: rgba(22, 163, 74, 0.14);
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.06);
+}
+
+.welcome-step:nth-child(3) {
+  background: linear-gradient(135deg, #fffaf5 0%, #fff4eb 100%);
+  border-color: rgba(255, 140, 66, 0.16);
+  box-shadow: 0 2px 8px rgba(255, 140, 66, 0.06);
+}
+
+.welcome-step-icon {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+.welcome-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.welcome-step-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.welcome-step-desc {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.welcome-examples {
+  text-align: left;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+.welcome-examples-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.welcome-examples-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.welcome-examples-list li {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a4a5a;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.welcome-start {
+  min-height: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 30%, transparent);
+}
 
 /* Günlük giriş raporu */
 .daily-report-modal {
@@ -1214,7 +1313,7 @@ body.wizard-open { overflow: hidden; }
 .welcome-name-field {
   width: 100%;
   text-align: left;
-  margin-bottom: 16px;
+  margin: 0 0 14px;
 }
 
 .welcome-name-label {
@@ -1328,8 +1427,17 @@ body.wizard-open { overflow: hidden; }
 #why-edit-btn { margin-top: 4px; }
 
 @media (max-width: 640px) {
-  .welcome-title { font-size: 1.3rem; }
-  .welcome-subtitle { font-size: 0.88rem; }
+  .welcome-card { padding: 0 16px 18px; }
+  .welcome-hero {
+    margin: 0 -16px 14px;
+    padding: 18px 16px 15px;
+  }
+  .welcome-title { font-size: 1.15rem; }
+  .welcome-intro { font-size: 0.84rem; }
+  .welcome-step-title { font-size: 0.86rem; }
+  .welcome-step-desc { font-size: 0.76rem; }
+  .welcome-examples-list { gap: 5px; }
+  .welcome-examples-list li { font-size: 0.74rem; white-space: normal; }
 }
 
 .modal-close {

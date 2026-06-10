@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hayat Panosu</title>
-  <link rel="stylesheet" href="styles.css?v=20260621">
+  <link rel="stylesheet" href="styles.css?v=20260622">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,14 +12,45 @@
 <body>
   <div id="welcome-overlay" class="modal-overlay hidden">
     <div class="wizard welcome-card">
-      <div class="welcome-logo">🌱</div>
-      <h2 class="welcome-title">Hayat Panosu'na Hoş Geldin</h2>
-      <p class="welcome-subtitle">Hayatının önemli alanlarını tek yerde takip et. Küçük adımların zamanla büyük değişimler yaratmasını sağla.</p>
-      <ul class="welcome-points">
-        <li><span class="welcome-check">✓</span> Hedeflerini seç</li>
-        <li><span class="welcome-check">✓</span> Günlük ilerlemeni gir</li>
-        <li><span class="welcome-check">✓</span> Gelişimini takip et</li>
-      </ul>
+      <div class="welcome-hero">
+        <div class="welcome-logo">🌱</div>
+        <h2 class="welcome-title">🌱 Hayat Panosu'na Hoş Geldin</h2>
+        <p class="welcome-intro">Hayat Panosu, önemli hedeflerini tek yerde takip etmeni sağlar.<br>Her gün küçük ilerlemeler girersin.<br>Zamanla büyük değişimleri görürsün.</p>
+      </div>
+
+      <ol class="welcome-steps">
+        <li class="welcome-step">
+          <span class="welcome-step-icon" aria-hidden="true">1️⃣</span>
+          <div class="welcome-step-text">
+            <span class="welcome-step-title">Hedeflerini Seç</span>
+            <span class="welcome-step-desc">Su, kitap, spor, para biriktirme veya kendi hedeflerini ekle.</span>
+          </div>
+        </li>
+        <li class="welcome-step">
+          <span class="welcome-step-icon" aria-hidden="true">2️⃣</span>
+          <div class="welcome-step-text">
+            <span class="welcome-step-title">Küçük Adımlar Gir</span>
+            <span class="welcome-step-desc">Her gün ne kadar ilerlediğini kaydet.</span>
+          </div>
+        </li>
+        <li class="welcome-step">
+          <span class="welcome-step-icon" aria-hidden="true">3️⃣</span>
+          <div class="welcome-step-text">
+            <span class="welcome-step-title">Gelişimini İzle</span>
+            <span class="welcome-step-desc">Başarılarını, ilerlemeni ve alışkanlıklarını takip et.</span>
+          </div>
+        </li>
+      </ol>
+
+      <div class="welcome-examples">
+        <p class="welcome-examples-label">Örnek hedefler:</p>
+        <ul class="welcome-examples-list">
+          <li>💧 Günde 2 litre su</li>
+          <li>📚 Ayda 1 kitap</li>
+          <li>🏃 Haftada 3 spor</li>
+        </ul>
+      </div>
+
       <div class="welcome-name-field">
         <label for="welcome-name-input" class="welcome-name-label">Adın <span class="welcome-name-optional">(opsiyonel)</span></label>
         <input type="text" id="welcome-name-input" class="welcome-name-input" placeholder="Örn: Tülay" maxlength="40" autocomplete="given-name">
@@ -286,6 +317,6 @@
     <footer class="footer"><p>Veriler tarayıcında tarih bazlı saklanır.</p></footer>
   </div>
 
-  <script src="app.js?v=20260621"></script>
+  <script src="app.js?v=20260622"></script>
 </body>
 </html>
