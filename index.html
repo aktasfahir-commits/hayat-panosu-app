@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hayat Panosu</title>
-  <link rel="stylesheet" href="styles.css?v=20260615">
+  <link rel="stylesheet" href="styles.css?v=20260616">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -54,6 +54,14 @@
               <input type="text" id="wizard-goal-unit" placeholder="Birim (dakika, litre)" maxlength="20">
             </div>
             <input type="text" id="wizard-goal-why" placeholder="Bu hedef senin için neden önemli?" maxlength="500">
+            <fieldset class="period-fieldset">
+              <legend class="period-legend">Periyot</legend>
+              <div class="period-radios">
+                <label class="period-radio"><input type="radio" name="wizard-goal-period" value="daily" checked><span>Günlük</span></label>
+                <label class="period-radio"><input type="radio" name="wizard-goal-period" value="weekly"><span>Haftalık</span></label>
+                <label class="period-radio"><input type="radio" name="wizard-goal-period" value="monthly"><span>Aylık</span></label>
+              </div>
+            </fieldset>
             <button type="submit" class="btn btn-ghost btn-block">Listeye Ekle</button>
           </form>
           <ul id="wizard-draft-list" class="template-list"></ul>
@@ -195,6 +203,14 @@
               </div>
               <input type="text" id="goal-unit" placeholder="Birim (dakika, litre)" maxlength="20">
               <input type="text" id="goal-why" placeholder="Bu hedef senin için neden önemli?" maxlength="500">
+              <fieldset class="period-fieldset">
+                <legend class="period-legend">Periyot</legend>
+                <div class="period-radios">
+                  <label class="period-radio"><input type="radio" name="goal-period" value="daily" checked><span>Günlük</span></label>
+                  <label class="period-radio"><input type="radio" name="goal-period" value="weekly"><span>Haftalık</span></label>
+                  <label class="period-radio"><input type="radio" name="goal-period" value="monthly"><span>Aylık</span></label>
+                </div>
+              </fieldset>
               <input type="text" id="goal-guide-desc" placeholder="Rehber açıklaması (opsiyonel)" maxlength="300">
               <input type="url" id="goal-guide-video" placeholder="Video linki (opsiyonel)" maxlength="500">
               <button type="submit" class="btn btn-primary btn-block">Hedef Ekle</button>
@@ -245,6 +261,14 @@
             </select>
             <input type="text" id="lib-custom-unit-other" class="lib-unit-other" placeholder="Özel birim yaz" maxlength="20">
             <input type="text" id="lib-custom-why" placeholder="Bu hedef senin için neden önemli?" maxlength="500">
+            <fieldset class="period-fieldset">
+              <legend class="period-legend">Periyot</legend>
+              <div class="period-radios">
+                <label class="period-radio"><input type="radio" name="lib-custom-period" value="daily" checked><span>Günlük</span></label>
+                <label class="period-radio"><input type="radio" name="lib-custom-period" value="weekly"><span>Haftalık</span></label>
+                <label class="period-radio"><input type="radio" name="lib-custom-period" value="monthly"><span>Aylık</span></label>
+              </div>
+            </fieldset>
             <button type="submit" class="btn btn-primary btn-block">Panoma Ekle</button>
           </form>
         </div>
@@ -255,6 +279,6 @@
     <footer class="footer"><p>Veriler tarayıcında tarih bazlı saklanır.</p></footer>
   </div>
 
-  <script src="app.js?v=20260615"></script>
+  <script src="app.js?v=20260616"></script>
 </body>
 </html>

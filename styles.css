@@ -521,6 +521,15 @@ body {
   white-space: nowrap;
 }
 
+.goal-period-badge {
+  display: inline-block;
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.2;
+  opacity: 0.9;
+}
+
 .goal-card-why-preview {
   font-size: 0.72rem;
   font-weight: 500;
@@ -821,6 +830,66 @@ body {
 }
 
 /* Forms */
+.period-fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.period-legend {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.period-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.period-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.period-radio input {
+  accent-color: var(--primary);
+  margin: 0;
+}
+
+.wizard-target-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.wizard-target-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.wizard-target-row .period-fieldset {
+  width: 100%;
+}
+
+.wizard-target-row .period-radios {
+  gap: 6px 12px;
+}
+
+.wizard-target-row .period-radio {
+  font-size: 0.8rem;
+}
+
 .add-form {
   display: flex;
   flex-direction: column;
@@ -1300,6 +1369,10 @@ body.wizard-open { overflow: hidden; }
   .goal-card-top-right { flex-wrap: wrap; justify-content: flex-end; max-width: 100%; }
   .btn-why { font-size: 0.64rem; padding: 3px 7px; }
   .goal-card-why-preview { font-size: 0.68rem; max-width: 100%; }
+  .goal-period-badge { font-size: 0.6rem; }
+  .period-radios { gap: 6px 10px; }
+  .wizard-target-main { flex-wrap: wrap; }
+  .wizard-target-main input[type="number"] { width: 100%; max-width: 120px; }
   .target-input-list .template-item input[type="number"] { width: 100%; }
 
   /* Hedef değeri düzenleme: input tam satır, butonlar eşit paylaşır (taşma yok) */

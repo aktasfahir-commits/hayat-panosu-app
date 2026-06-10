@@ -89,9 +89,80 @@ let wizardSelectedCategories = [];
 let wizardSelectedGoals = [];
 let wizardEditMode = false; // pano kuruluyken (ilk açılış) false, sonradan ekleme yapılırken true
 
+const PERIODS = {
+  daily: { label: 'Günlük', badge: '📅 Günlük' },
+  weekly: { label: 'Haftalık', badge: '📅 Haftalık' },
+  monthly: { label: 'Aylık', badge: '📅 Aylık' },
+};
+const VALID_PERIODS = ['daily', 'weekly', 'monthly'];
+
 function today() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function normalizePeriod(period) {
+  return VALID_PERIODS.includes(period) ? period : 'daily';
+}
+
+function parseDateStr(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatDateFromDate(dt) {
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+// Pazartesi–Pazar haftası (seçili günü içeren).
+function getWeekDates(dateStr) {
+  const dt = parseDateStr(dateStr);
+  const dow = dt.getDay();
+  const diffToMon = dow === 0 ? -6 : 1 - dow;
+  const monday = new Date(dt);
+  monday.setDate(dt.getDate() + diffToMon);
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    dates.push(formatDateFromDate(d));
+  }
+  return dates;
+}
+
+function getMonthDates(dateStr) {
+  const [y, m] = dateStr.split('-').map(Number);
+  const last = new Date(y, m, 0).getDate();
+  const dates = [];
+  for (let d = 1; d <= last; d++) {
+    dates.push(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+  }
+  return dates;
+}
+
+function getPeriodActual(goalId, dateStr, period) {
+  const p = normalizePeriod(period);
+  if (p === 'daily') return getActual(dateStr, goalId);
+  const dates = p === 'weekly' ? getWeekDates(dateStr) : getMonthDates(dateStr);
+  return dates.reduce((sum, d) => sum + (Number(getActual(d, goalId)) || 0), 0);
+}
+
+function periodFieldHtml(name, selected = 'daily') {
+  const sel = normalizePeriod(selected);
+  return `<fieldset class="period-fieldset">
+    <legend class="period-legend">Periyot</legend>
+    <div class="period-radios">
+      ${VALID_PERIODS.map((p) => `
+        <label class="period-radio">
+          <input type="radio" name="${escapeHtml(name)}" value="${p}"${p === sel ? ' checked' : ''}>
+          <span>${PERIODS[p].label}</span>
+        </label>`).join('')}
+    </div>
+  </fieldset>`;
+}
+
+function readPeriodRadio(name) {
+  return normalizePeriod(document.querySelector(`input[name="${name}"]:checked`)?.value);
 }
 
 function emptyDay() {
@@ -121,18 +192,24 @@ function inferCategory(goal) {
 }
 
 function getDailyGoals(date) {
-  return data.goals.map((g) => ({
-    id: g.id,
-    name: g.name,
-    category: g.category,
-    target: g.target,
-    unit: g.unit || '',
-    icon: g.icon || CATEGORIES[g.category]?.icon || '🎯',
-    actual: getActual(date, g.id),
-    defaultKey: g.defaultKey || null,
-    guide: g.guide || { description: '', videoUrl: '' },
-    why: (g.why || '').trim(),
-  }));
+  return data.goals.map((g) => {
+    const period = normalizePeriod(g.period);
+    const dailyActual = getActual(date, g.id);
+    return {
+      id: g.id,
+      name: g.name,
+      category: g.category,
+      target: g.target,
+      unit: g.unit || '',
+      icon: g.icon || CATEGORIES[g.category]?.icon || '🎯',
+      actual: dailyActual,
+      periodActual: getPeriodActual(g.id, date, period),
+      period,
+      defaultKey: g.defaultKey || null,
+      guide: g.guide || { description: '', videoUrl: '' },
+      why: (g.why || '').trim(),
+    };
+  });
 }
 
 /* ---------------- Veri yükleme / migration ---------------- */
@@ -192,6 +269,7 @@ function migrateToV8(parsed) {
       ...(g.defaultKey ? { defaultKey: g.defaultKey } : {}),
       guide: g.guide || (g.defaultKey && DEFAULT_GOALS[g.defaultKey]?.guide) || { description: '', videoUrl: '' },
       ...(g.why?.trim() ? { why: g.why.trim() } : {}),
+      ...(normalizePeriod(g.period) !== 'daily' ? { period: normalizePeriod(g.period) } : {}),
     }))
     .filter((g) => g.name && g.target > 0);
 
@@ -232,6 +310,9 @@ function saveData() {
   if (!payload.userName) delete payload.userName;
   payload.goals = payload.goals.map((g) => {
     const goal = { ...g };
+    const period = normalizePeriod(goal.period);
+    if (period === 'daily') delete goal.period;
+    else goal.period = period;
     if (!goal.why?.trim()) delete goal.why;
     return goal;
   });
@@ -409,8 +490,10 @@ function initWhyPlaceholders() {
 /* ---------------- Dashboard render ---------------- */
 
 function renderGoalCard(g) {
-  const p = getProgress(g.actual, g.target);
+  const progressActual = g.periodActual ?? g.actual;
+  const p = getProgress(progressActual, g.target);
   const pts = calcPoints(g.actual, g.target);
+  const periodBadge = PERIODS[g.period]?.badge || PERIODS.daily.badge;
   const cat = CATEGORIES[g.category] || CATEGORIES.gelisim;
   const catStreak = getCategoryStreak(g.category);
   const unit = g.unit ? ` ${escapeHtml(g.unit)}` : '';
@@ -429,6 +512,7 @@ function renderGoalCard(g) {
       <div class="goal-card-top">
         <div class="goal-card-head">
           <span class="goal-card-name">${g.icon ? g.icon + ' ' : ''}${escapeHtml(g.name)}</span>
+          <span class="goal-period-badge">${periodBadge}</span>
           ${whyLine}
         </div>
         <span class="goal-card-top-right">
@@ -442,7 +526,7 @@ function renderGoalCard(g) {
       </div>
       <div class="goal-card-meta">
         <span class="goal-card-target">
-          <strong>${formatNumber(g.actual || 0)}</strong> / ${formatNumber(g.target)}${unit}
+          <strong>${formatNumber(progressActual || 0)}</strong> / ${formatNumber(g.target)}${unit}
           <button type="button" class="btn-edit-target" data-action="edit-target" data-id="${g.id}" title="Hedef değerini düzenle" aria-label="Hedef değerini düzenle">✏️</button>
         </span>
         <span class="goal-card-meta-right">
@@ -919,7 +1003,7 @@ function addFromLibrary(key) {
 
 /* ---------------- Hedef işlemleri ---------------- */
 
-function addGoal({ name, target, unit, category, defaultKey, icon, guide, why }) {
+function addGoal({ name, target, unit, category, defaultKey, icon, guide, why, period }) {
   const goal = {
     id: defaultKey ? defaultGoalId(defaultKey) : generateId(),
     name,
@@ -932,6 +1016,8 @@ function addGoal({ name, target, unit, category, defaultKey, icon, guide, why })
   };
   const whyText = (why || '').trim();
   if (whyText) goal.why = whyText;
+  const goalPeriod = normalizePeriod(period);
+  if (goalPeriod !== 'daily') goal.period = goalPeriod;
   // Aynı default hedef iki kez eklenmesin.
   if (defaultKey && data.goals.some((g) => g.defaultKey === defaultKey)) return null;
   data.goals.push(goal);
@@ -1143,12 +1229,15 @@ function renderWizardTargets() {
   list.innerHTML = wizardSelectedGoals.map((g) => {
     const cat = CATEGORIES[g.category];
     const unit = g.unit || cat.label;
-    return `<div class="template-item" data-uid="${g.uid}">
-      <div class="template-item-info">
-        <span class="template-item-name">${g.icon || cat.icon} ${escapeHtml(g.name)}</span>
+    return `<div class="wizard-target-row template-item" data-uid="${g.uid}">
+      <div class="wizard-target-main">
+        <div class="template-item-info">
+          <span class="template-item-name">${g.icon || cat.icon} ${escapeHtml(g.name)}</span>
+        </div>
+        <span class="template-item-meta">${escapeHtml(unit)}</span>
+        <input type="number" data-action="set-target" data-uid="${g.uid}" min="0.01" step="any" value="${g.target || ''}" placeholder="0">
       </div>
-      <span class="template-item-meta">${escapeHtml(unit)}</span>
-      <input type="number" data-action="set-target" data-uid="${g.uid}" min="0.01" step="any" value="${g.target || ''}" placeholder="0">
+      ${periodFieldHtml(`wizard-period-${g.uid}`, g.period || 'daily')}
     </div>`;
   }).join('');
   document.getElementById('wizard-empty-targets').classList.toggle('hidden', wizardStepValid(2));
@@ -1243,6 +1332,7 @@ function togglePresetGoal(key) {
       category: def.category,
       target: def.suggest,
       guide: { ...def.guide },
+      period: 'daily',
       custom: false,
     });
   } else {
@@ -1263,6 +1353,7 @@ function finishWizard() {
       icon: g.icon,
       guide: g.guide,
       why: g.why,
+      period: g.period,
     });
   });
   data.setupComplete = true;
@@ -1324,11 +1415,17 @@ document.getElementById('lib-custom-form').addEventListener('submit', (e) => {
   const unit = getLibCustomUnit();
   const why = document.getElementById('lib-custom-why').value.trim();
   if (!name || Number.isNaN(target) || target <= 0) return;
-  addGoal({ name, target, unit, category, guide: { description: '', videoUrl: '' }, why });
+  addGoal({
+    name, target, unit, category,
+    guide: { description: '', videoUrl: '' },
+    why,
+    period: readPeriodRadio('lib-custom-period'),
+  });
   data.setupComplete = true;
   saveData();
   e.target.reset();
   libUnitOther.classList.remove('show');
+  document.querySelector('input[name="lib-custom-period"][value="daily"]')?.click();
   render();
   showToast(`${name} panona eklendi! 🎯`);
 });
@@ -1409,10 +1506,16 @@ document.getElementById('goal-form').addEventListener('submit', (e) => {
   const description = document.getElementById('goal-guide-desc').value.trim();
   const videoUrl = document.getElementById('goal-guide-video').value.trim();
   if (!name || Number.isNaN(target) || target <= 0) return;
-  addGoal({ name, target, unit, category, guide: { description, videoUrl }, why });
+  addGoal({
+    name, target, unit, category,
+    guide: { description, videoUrl },
+    why,
+    period: readPeriodRadio('goal-period'),
+  });
   data.setupComplete = true;
   saveData();
   e.target.reset();
+  document.querySelector('input[name="goal-period"][value="daily"]')?.click();
   render();
   showToast('Hedef eklendi!');
 });
@@ -1467,10 +1570,12 @@ document.getElementById('wizard-goal-form').addEventListener('submit', (e) => {
     category,
     target: 0,
     guide: { description: '', videoUrl: '' },
+    period: readPeriodRadio('wizard-goal-period'),
     ...(why ? { why } : {}),
     custom: true,
   });
   e.target.reset();
+  document.querySelector('input[name="wizard-goal-period"][value="daily"]')?.click();
   updateWizard();
 });
 
@@ -1481,7 +1586,7 @@ document.getElementById('wizard-draft-list').addEventListener('click', (e) => {
   }
 });
 
-// Wizard: hedef değeri girişi
+// Wizard: hedef değeri ve periyot girişi
 document.getElementById('target-input-list').addEventListener('input', (e) => {
   if (e.target.dataset.action !== 'set-target') return;
   const g = wizardSelectedGoals.find((x) => x.uid === e.target.dataset.uid);
@@ -1490,6 +1595,13 @@ document.getElementById('target-input-list').addEventListener('input', (e) => {
   g.target = Number.isNaN(val) ? 0 : val;
   document.getElementById('wizard-empty-targets').classList.toggle('hidden', wizardStepValid(2));
   document.getElementById('wizard-next').disabled = !wizardStepValid(2);
+});
+
+document.getElementById('target-input-list').addEventListener('change', (e) => {
+  if (e.target.type !== 'radio' || !e.target.name?.startsWith('wizard-period-')) return;
+  const uid = e.target.name.replace('wizard-period-', '');
+  const g = wizardSelectedGoals.find((x) => x.uid === uid);
+  if (g) g.period = normalizePeriod(e.target.value);
 });
 
 document.getElementById('wizard-back').addEventListener('click', () => {
