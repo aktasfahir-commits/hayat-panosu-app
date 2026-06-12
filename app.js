@@ -1183,30 +1183,53 @@ function statAmountLabel(goal, total) {
   return `${val}`;
 }
 
-function renderStatsLine(goal, total) {
-  const icon = goal.icon || CATEGORIES[goal.category]?.icon || '🎯';
-  const amount = statAmountLabel(goal, total);
-  return `<li class="stats-line">
-    <span class="stats-line-icon" aria-hidden="true">${icon}</span>
-    <span class="stats-line-text">
-      <span class="stats-line-name">${escapeHtml(goal.name)}</span>
-      <span class="stats-line-sep"> — </span>
-      <span class="stats-line-amount">${escapeHtml(amount)}</span>
-    </span>
-  </li>`;
+function statCellLabel(goal, total) {
+  const n = Number(total) || 0;
+  if (n === 0) return { text: '—', empty: true };
+  return { text: statAmountLabel(goal, n), empty: false };
 }
 
-function renderStatsSection(title, items) {
-  if (!items.length) {
-    return `<section class="stats-block">
-      <h3 class="stats-block-title">${escapeHtml(title)}</h3>
-      <p class="stats-empty-section">Henüz yeterli veri oluşmadı.</p>
-    </section>`;
-  }
-  const lines = items.map((item) => renderStatsLine(item.goal, item.total)).join('');
-  return `<section class="stats-block">
-    <h3 class="stats-block-title">${escapeHtml(title)}</h3>
-    <ul class="stats-list">${lines}</ul>
+function renderStatsTableRow(goal, weekTotal, monthTotal) {
+  const icon = goal.icon || CATEGORIES[goal.category]?.icon || '🎯';
+  const week = statCellLabel(goal, weekTotal);
+  const month = statCellLabel(goal, monthTotal);
+  const weekClass = week.empty ? ' stats-td-empty' : '';
+  const monthClass = month.empty ? ' stats-td-empty' : '';
+  return `<tr>
+    <td class="stats-td-goal" data-label="Hedef">
+      <span class="stats-goal-cell">
+        <span class="stats-goal-icon" aria-hidden="true">${icon}</span>
+        <span class="stats-goal-name">${escapeHtml(goal.name)}</span>
+      </span>
+    </td>
+    <td class="stats-td-num${weekClass}" data-label="Son 7 Gün">${escapeHtml(week.text)}</td>
+    <td class="stats-td-num${monthClass}" data-label="Bu Ay">${escapeHtml(month.text)}</td>
+  </tr>`;
+}
+
+function renderStatsTable(weekDates, monthDates) {
+  const rows = data.goals
+    .map((goal) => ({
+      goal,
+      week: sumGoalProgress(goal.id, weekDates),
+      month: sumGoalProgress(goal.id, monthDates),
+    }))
+    .sort((a, b) => Math.max(b.week, b.month) - Math.max(a.week, a.month));
+
+  const body = rows.map((r) => renderStatsTableRow(r.goal, r.week, r.month)).join('');
+  return `<section class="stats-block stats-table-block">
+    <div class="stats-table-wrap">
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th scope="col">Hedef</th>
+            <th scope="col">Son 7 Gün</th>
+            <th scope="col">Bu Ay</th>
+          </tr>
+        </thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
   </section>`;
 }
 
@@ -1233,19 +1256,18 @@ function renderTopGoalsSection(items) {
 
 function renderStats() {
   const container = document.getElementById('stats-content');
-  const weekData = aggregateGoalTotals(getLast7DaysDates());
-  const monthData = aggregateGoalTotals(getMonthDates(today()));
-  const topSource = weekData.length ? weekData : monthData;
-
-  if (!weekData.length && !monthData.length) {
+  if (!data.goals.length) {
     container.innerHTML = '<p class="stats-empty">Henüz yeterli veri oluşmadı.</p>';
     return;
   }
 
-  container.innerHTML =
-    renderStatsSection('Son 7 Gün', weekData)
-    + renderStatsSection('Bu Ay', monthData)
-    + renderTopGoalsSection(topSource);
+  const weekDates = getLast7DaysDates();
+  const monthDates = getMonthDates(today());
+  const weekData = aggregateGoalTotals(weekDates);
+  const monthData = aggregateGoalTotals(monthDates);
+  const topSource = weekData.length ? weekData : monthData;
+
+  container.innerHTML = renderStatsTable(weekDates, monthDates) + renderTopGoalsSection(topSource);
 }
 
 function addFromLibrary(key) {
