@@ -1371,15 +1371,6 @@ function renderStatsTable(rows) {
   </section>`;
 }
 
-const WEEKLY_SUMMARY_CLOSINGS = [
-  'Küçük adımlar birikiyor. Güzel gidiyorsun.',
-  'Her kayıt bir adım daha. Kendine iyi bakmaya devam.',
-  'Bu hafta kendine zaman ayırdın. Bu çok değerli.',
-  'İstikrarlı ilerliyorsun. Gurur duyabilirsin.',
-  'Haftayı böyle tamamlamak güzel bir his.',
-  'Kendin için yaptıkların birikiyor. Devam et.',
-];
-
 function weeklyGainLine(goal, total) {
   return todaysGainLine({
     name: goal.name,
@@ -1389,9 +1380,15 @@ function weeklyGainLine(goal, total) {
   });
 }
 
-function weeklySummaryClosing(topGoal) {
-  const seed = `${getLast7DaysDates().join('')}-${topGoal.id || topGoal.name}`;
-  return stablePick(seed, WEEKLY_SUMMARY_CLOSINGS);
+function weeklyTopAchievementLine(goal, total) {
+  const unitKey = (goal.unit || '').trim().toLocaleLowerCase('tr-TR');
+  const isPara = goal.defaultKey === 'para'
+    || unitKey === '₺' || unitKey === 'tl'
+    || /para|birikim|kumbara/i.test(goal.name || '');
+  if (isPara) {
+    return `Bu hafta ${formatStatNumber(total)} TL ayırdın.`;
+  }
+  return `Bu hafta ${weeklyGainLine(goal, total)}.`;
 }
 
 function renderWeeklySummarySection(weekDates) {
@@ -1422,13 +1419,13 @@ function renderWeeklySummarySection(weekDates) {
       <p class="stats-weekly-lead">Bu Hafta Kendin İçin Neler Yaptın?</p>
       <ul class="stats-weekly-gains">${gainLines}</ul>
       <div class="stats-weekly-top">
-        <p class="stats-weekly-top-label">Bu hafta en çok ilerlediğin hedef:</p>
+        <p class="stats-weekly-top-label">Bu hafta en çok ilerlediğin hedef</p>
         <p class="stats-weekly-top-goal">
           <span class="stats-weekly-top-icon" aria-hidden="true">${topIcon}</span>
           <span>${escapeHtml(topGoal.goal.name)}</span>
         </p>
+        <p class="stats-weekly-top-fact">${escapeHtml(weeklyTopAchievementLine(topGoal.goal, topGoal.total))}</p>
       </div>
-      <p class="stats-weekly-closing">${escapeHtml(weeklySummaryClosing(topGoal.goal))}</p>
     </div>
   </section>`;
 }
