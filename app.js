@@ -3,11 +3,11 @@ const POINTS = { max: 10, exceedBonus: 3 };
 const CATEGORY_ORDER = ['spor', 'saglik', 'zihin', 'gelisim', 'yasam'];
 
 const CATEGORIES = {
-  spor: { label: 'Spor', icon: '🏃', from: '#FF4D4D', to: '#FF6B6B' },
-  saglik: { label: 'Sağlık', icon: '💧', from: '#4DA3FF', to: '#1E90FF' },
-  zihin: { label: 'Zihin / Rahatlama', icon: '🧘', from: '#A66CFF', to: '#7B3FF2' },
-  gelisim: { label: 'Gelişim', icon: '📚', from: '#2ECC71', to: '#27AE60' },
-  yasam: { label: 'Yaşam / Hedefler', icon: '💰', from: '#FFA94D', to: '#FF8C42' },
+  spor: { label: 'Spor', icon: '🏃', from: '#F97316', to: '#FB923C' },
+  saglik: { label: 'Sağlık', icon: '💧', from: '#22C55E', to: '#16A34A' },
+  zihin: { label: 'Zihin / Rahatlama', icon: '🧘', from: '#A855F7', to: '#7C3AED' },
+  gelisim: { label: 'Gelişim', icon: '📚', from: '#3B82F6', to: '#2563EB' },
+  yasam: { label: 'Yaşam / Hedefler', icon: '💰', from: '#F59E0B', to: '#EAB308' },
 };
 
 const DEFAULT_GOALS = {
