@@ -191,6 +191,72 @@ function inferCategory(goal) {
   return 'gelisim';
 }
 
+const PRESET_NAME_TO_KEY = Object.fromEntries(
+  Object.entries(DEFAULT_GOALS).map(([key, def]) => [def.name.toLocaleLowerCase('tr-TR'), key])
+);
+
+// Özel hedef adları için akıllı ikon eşleşmesi (uzun/özel ifadeler önce).
+const GOAL_NAME_ICON_RULES = [
+  { keywords: ['yüz yogası', 'yuz yogasi', 'face yoga'], icon: '🙂' },
+  { keywords: ['ip atlama', 'zıplama', 'zip atlama', 'ziplama'], icon: '🤸' },
+  { keywords: ['yüz', 'yuz'], icon: '🙂' },
+  { keywords: ['yoga'], icon: '🧘' },
+  { keywords: ['yürüyüş', 'yuruyus', 'yürü', 'yuru'], icon: '🚶' },
+  { keywords: ['adım', 'adim'], icon: '🚶' },
+  { keywords: ['koşu', 'kosu', 'koşmak', 'kosmak'], icon: '🏃' },
+  { keywords: ['meditasyon'], icon: '🧘' },
+  { keywords: ['nefes'], icon: '🌬️' },
+  { keywords: ['birikim', 'kumbara'], icon: '💰' },
+  { keywords: ['para'], icon: '💰' },
+  { keywords: ['su'], icon: '💧' },
+  { keywords: ['kitap', 'okuma'], icon: '📖' },
+  { keywords: ['uyku'], icon: '😴' },
+  { keywords: ['vitamin', 'ilaç', 'ilac'], icon: '💊' },
+  { keywords: ['temizlik'], icon: '🧹' },
+  { keywords: ['düzen', 'duzen'], icon: '🧹' },
+  { keywords: ['yapılacak', 'yapilacak'], icon: '✅' },
+  { keywords: ['görev', 'gorev'], icon: '✅' },
+  { keywords: ['ingilizce', 'almanca', 'fransızca', 'fransizca', 'ispanyolca'], icon: '🌍' },
+  { keywords: ['dil'], icon: '🌍' },
+  { keywords: ['dans'], icon: '💃' },
+  { keywords: ['koleksiyon'], icon: '🪨' },
+  { keywords: ['taş', 'tas'], icon: '🪨' },
+  { keywords: ['beslenme'], icon: '🥗' },
+  { keywords: ['yemek'], icon: '🥗' },
+  { keywords: ['tartı', 'tarti'], icon: '⚖️' },
+  { keywords: ['kilo'], icon: '⚖️' },
+  { keywords: ['cilt'], icon: '✨' },
+  { keywords: ['bakım', 'bakim'], icon: '✨' },
+  { keywords: ['mekik'], icon: '💪' },
+  { keywords: ['şükür', 'sukur'], icon: '🙏' },
+];
+
+function matchGoalNameIcon(name) {
+  const n = (name || '').trim().toLocaleLowerCase('tr-TR');
+  if (!n) return null;
+  for (const rule of GOAL_NAME_ICON_RULES) {
+    if (rule.keywords.some((kw) => n.includes(kw.toLocaleLowerCase('tr-TR')))) {
+      return rule.icon;
+    }
+  }
+  return null;
+}
+
+function goalDisplayIcon(goal) {
+  if (goal.defaultKey && DEFAULT_GOALS[goal.defaultKey]?.icon) {
+    return DEFAULT_GOALS[goal.defaultKey].icon;
+  }
+  const nameKey = (goal.name || '').trim().toLocaleLowerCase('tr-TR');
+  const presetKey = PRESET_NAME_TO_KEY[nameKey];
+  if (presetKey && DEFAULT_GOALS[presetKey]?.icon) {
+    return DEFAULT_GOALS[presetKey].icon;
+  }
+  const matched = matchGoalNameIcon(goal.name);
+  if (matched) return matched;
+  const cat = goal.category || inferCategory(goal);
+  return CATEGORIES[cat]?.icon || '🎯';
+}
+
 function getDailyGoals(date) {
   return data.goals.map((g) => {
     const period = normalizePeriod(g.period);
@@ -201,7 +267,7 @@ function getDailyGoals(date) {
       category: g.category,
       target: g.target,
       unit: g.unit || '',
-      icon: g.icon || CATEGORIES[g.category]?.icon || '🎯',
+      icon: goalDisplayIcon(g),
       actual: dailyActual,
       periodActual: getPeriodActual(g.id, date, period),
       period,
@@ -1076,7 +1142,11 @@ function renderTodaysGains() {
   empty.classList.add('hidden');
   list.classList.remove('hidden');
   list.innerHTML = goals.map((g) =>
-    `<li class="gains-item"><span class="gains-check" aria-hidden="true">✓</span><span>${escapeHtml(todaysGainLine(g))}</span></li>`
+    `<li class="gains-item">
+      <span class="gains-icon" aria-hidden="true">${g.icon}</span>
+      <span class="gains-check" aria-hidden="true">✓</span>
+      <span>${escapeHtml(todaysGainLine(g))}</span>
+    </li>`
   ).join('');
 }
 
@@ -1179,23 +1249,6 @@ function switchView(view) {
 /* ---------------- İstatistikler (V1) ---------------- */
 
 const STATS_MEDALS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
-
-const PRESET_NAME_TO_KEY = Object.fromEntries(
-  Object.entries(DEFAULT_GOALS).map(([key, def]) => [def.name.toLocaleLowerCase('tr-TR'), key])
-);
-
-function goalDisplayIcon(goal) {
-  if (goal.defaultKey && DEFAULT_GOALS[goal.defaultKey]?.icon) {
-    return DEFAULT_GOALS[goal.defaultKey].icon;
-  }
-  const nameKey = (goal.name || '').trim().toLocaleLowerCase('tr-TR');
-  const presetKey = PRESET_NAME_TO_KEY[nameKey];
-  if (presetKey && DEFAULT_GOALS[presetKey]?.icon) {
-    return DEFAULT_GOALS[presetKey].icon;
-  }
-  const cat = goal.category || inferCategory(goal);
-  return CATEGORIES[cat]?.icon || '🎯';
-}
 
 function statsGroupKey(goal) {
   if (goal.defaultKey) return `dk:${goal.defaultKey}`;

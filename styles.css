@@ -286,6 +286,12 @@ body {
   word-break: break-word;
 }
 
+.gains-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
 .gains-check {
   color: #16a34a;
   font-weight: 800;
