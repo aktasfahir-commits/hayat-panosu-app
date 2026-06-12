@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hayat Panosu</title>
-  <link rel="stylesheet" href="styles.css?v=20260629">
+  <link rel="stylesheet" href="styles.css?v=20260631">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -147,6 +147,20 @@
     <div class="modal daily-report-modal">
       <div id="daily-report-content" class="daily-report-content"></div>
       <button type="button" class="btn btn-primary btn-block daily-report-start" id="daily-report-start">Bugüne Başla</button>
+    </div>
+  </div>
+
+  <div id="delete-goal-modal" class="modal-overlay hidden">
+    <div class="modal modal-compact">
+      <h3>Hedefi Sil</h3>
+      <p class="delete-goal-lead">Bu hedefi silmek istediğine emin misin?</p>
+      <p class="delete-goal-label">Hedef:</p>
+      <p class="delete-goal-name" id="delete-goal-name"></p>
+      <p class="delete-goal-warning">Bu işlem geri alınamaz.</p>
+      <div class="delete-goal-actions">
+        <button type="button" class="btn btn-ghost" id="delete-goal-cancel">Vazgeç</button>
+        <button type="button" class="btn btn-danger" id="delete-goal-confirm">Sil</button>
+      </div>
     </div>
   </div>
 
@@ -334,6 +348,6 @@
     <footer class="footer"><p>Veriler tarayıcında tarih bazlı saklanır.</p></footer>
   </div>
 
-  <script src="app.js?v=20260629"></script>
+  <script src="app.js?v=20260631"></script>
 </body>
 </html>

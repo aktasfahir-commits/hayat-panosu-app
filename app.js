@@ -82,6 +82,7 @@ function truncateWhy(text, max = WHY_PREVIEW_MAX) {
 let data = { version: 8, goals: [], days: {}, setupComplete: false };
 let selectedDate = today();
 let currentView = 'dashboard'; // 'dashboard' | 'library' | 'stats'
+let deleteGoalId = null;
 
 // Onboarding state: 0 = kategori, 1 = hedef, 2 = değer
 let wizardStep = 0;
@@ -445,28 +446,41 @@ function markDailyReportShown(todayStr) {
 
 /* ---------------- Günlük giriş raporu ---------------- */
 
-function yesterdayProgressLine(g) {
-  const actual = g.actual;
-  if (!(actual > 0)) return null;
-  const p = getProgress(actual, g.target);
-  const unit = (g.unit || '').toLocaleLowerCase('tr-TR');
+function reportProgressRatio(g, actual) {
+  const unit = (g.unit || '').trim().toLocaleLowerCase('tr-TR');
+  const a = formatNumber(actual);
+  const t = formatNumber(g.target);
+  if (unit === 'litre') return `${a} / ${t} litre su`;
+  if (unit === 'adım' || unit === 'adim') return `${a} / ${t} adım`;
+  if (unit === 'sayfa') return `${a} / ${t} sayfa`;
+  if (unit === 'dakika') return `${a} / ${t} dakika`;
+  if (unit === 'saat') return `${a} / ${t} saat`;
+  if (unit === '₺' || unit === 'tl') return `${a} / ${t} TL`;
+  if (unit === 'tekrar') return `${a} / ${t} mekik`;
+  if (unit === 'görev' || unit === 'gorev') return `${a} / ${t} görev`;
+  if (g.unit) return `${a} / ${t} ${g.unit}`;
+  return `${a} / ${t}`;
+}
 
-  if (unit === 'sayfa') {
-    return `${g.name} hedefinde ${formatNumber(actual)} sayfa ilerledin`;
+function yesterdayProgressLine(g) {
+  if (!(g.actual > 0)) return null;
+  const period = normalizePeriod(g.period);
+  const progressActual = g.periodActual ?? g.actual;
+  const ratio = reportProgressRatio(g, progressActual);
+
+  if (period === 'weekly') {
+    return `${g.name}: Bu hafta ${ratio}`;
   }
-  if (p.percent >= 100) {
-    return `${g.name} hedefini tamamladın`;
+  if (period === 'monthly') {
+    return `${g.name}: Bu ay ${ratio}`;
   }
-  if (p.percent >= 40) {
-    return `${g.name} hedefinin %${p.percent}'ini tamamladın`;
-  }
-  return `${g.name} hedefinin %${p.percent}'ine ulaştın`;
+  return `Dün ${g.name} hedefinde ${reportProgressRatio(g, g.actual)}`;
 }
 
 function buildYesterdayReportHtml(yesterday) {
   const goals = getDailyGoals(yesterday)
     .filter((g) => g.actual > 0)
-    .sort((a, b) => getProgress(b.actual, b.target).percent - getProgress(a.actual, a.target).percent);
+    .sort((a, b) => goalPeriodProgress(b).percent - goalPeriodProgress(a).percent);
 
   const lines = goals.map(yesterdayProgressLine).filter(Boolean).slice(0, 5);
   const list = lines.map((line) =>
@@ -657,10 +671,15 @@ function calcPoints(actual, target) {
   return { bonus, total: Math.round((base + bonus) * 10) / 10 };
 }
 
+function goalPeriodProgress(g) {
+  const actual = g.periodActual ?? g.actual;
+  return getProgress(actual, g.target);
+}
+
 function dailyProgressPercent(date) {
   const goals = getDailyGoals(date);
   if (!goals.length) return { percent: 0, count: 0 };
-  const sum = goals.reduce((s, g) => s + getProgress(g.actual, g.target).percent, 0);
+  const sum = goals.reduce((s, g) => s + goalPeriodProgress(g).percent, 0);
   return { percent: Math.round(sum / goals.length), count: goals.length };
 }
 
@@ -747,7 +766,7 @@ function initWhyPlaceholders() {
 function renderGoalCard(g) {
   const progressActual = g.periodActual ?? g.actual;
   const p = getProgress(progressActual, g.target);
-  const pts = calcPoints(g.actual, g.target);
+  const pts = calcPoints(progressActual, g.target);
   const periodBadge = PERIODS[g.period]?.badge || PERIODS.daily.badge;
   const cat = CATEGORIES[g.category] || CATEGORIES.gelisim;
   const catStreak = getCategoryStreak(g.category);
@@ -778,6 +797,12 @@ function renderGoalCard(g) {
           <button type="button" class="btn-why" data-action="show-why" data-id="${g.id}" title="Hedefin arkasındaki neden" aria-label="Hedefin arkasındaki neden">💭 Neden?</button>
           ${hasGuide ? `<button type="button" class="btn-guide" data-action="show-guide" data-id="${g.id}" title="Nasıl yapılır?" aria-label="Nasıl yapılır?">?</button>` : ''}
           <span class="goal-card-points${p.exceeded ? ' exceeded' : ''}">+${pts.total}${p.exceeded ? ' ⭐' : ''}</span>
+          <div class="goal-card-menu-wrap">
+            <button type="button" class="btn-goal-menu" data-action="toggle-goal-menu" data-id="${g.id}" aria-label="Hedef seçenekleri" aria-haspopup="true" aria-expanded="false">⋯</button>
+            <div class="goal-card-menu hidden" id="goal-menu-${g.id}" role="menu">
+              <button type="button" class="goal-card-menu-item goal-card-menu-delete" data-action="delete-goal-card" data-id="${g.id}" role="menuitem">🗑️ Hedefi Sil</button>
+            </div>
+          </div>
         </span>
       </div>
       <div class="goal-card-bar">
@@ -1518,8 +1543,51 @@ function addGoal({ name, target, unit, category, defaultKey, icon, guide, why, p
 
 function deleteGoal(id) {
   data.goals = data.goals.filter((g) => g.id !== id);
-  Object.values(data.days).forEach((d) => delete d.progress?.[id]);
   saveData();
+}
+
+function closeAllGoalMenus() {
+  document.querySelectorAll('.goal-card-menu').forEach((el) => el.classList.add('hidden'));
+  document.querySelectorAll('.btn-goal-menu').forEach((el) => el.setAttribute('aria-expanded', 'false'));
+}
+
+function toggleGoalMenu(goalId) {
+  const menu = document.getElementById(`goal-menu-${goalId}`);
+  const btn = document.querySelector(`.btn-goal-menu[data-id="${goalId}"]`);
+  if (!menu) return;
+  const wasHidden = menu.classList.contains('hidden');
+  closeAllGoalMenus();
+  if (wasHidden) {
+    menu.classList.remove('hidden');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  }
+}
+
+function openDeleteGoalModal(goalId) {
+  const g = findGoal(goalId);
+  if (!g) return;
+  deleteGoalId = goalId;
+  closeAllGoalMenus();
+  document.getElementById('delete-goal-name').textContent = g.name;
+  document.getElementById('delete-goal-modal').classList.remove('hidden');
+}
+
+function closeDeleteGoalModal() {
+  deleteGoalId = null;
+  document.getElementById('delete-goal-modal').classList.add('hidden');
+}
+
+function confirmDeleteGoal() {
+  if (!deleteGoalId) return;
+  const name = findGoal(deleteGoalId)?.name || 'Hedef';
+  const removedId = deleteGoalId;
+  deleteGoal(removedId);
+  closeDeleteGoalModal();
+  if (whyModalGoalId === removedId) closeWhyModal();
+  render();
+  if (currentView === 'library') renderLibrary();
+  if (currentView === 'stats') renderStats();
+  showToast(`${name} silindi`);
 }
 
 // Yalnızca hedef değerini günceller (ad ve birim değişmez).
@@ -1548,16 +1616,19 @@ function updateGoalProgress(goalId, rawValue) {
   if (Number.isNaN(value) || value < 0) return false;
   const goal = findGoal(goalId);
   if (!goal) return false;
-  const prev = getActual(selectedDate, goalId);
-  const prevPts = calcPoints(prev, goal.target).total;
+  const period = normalizePeriod(goal.period);
+  const prevPeriodActual = getPeriodActual(goalId, selectedDate, period);
+  const prevPts = calcPoints(prevPeriodActual, goal.target).total;
   const day = getDay(selectedDate);
   if (value === 0) delete day.progress[goalId];
   else day.progress[goalId] = value;
   saveData();
-  const newPts = calcPoints(value, goal.target).total;
+  const newPeriodActual = getPeriodActual(goalId, selectedDate, period);
+  const newPts = calcPoints(newPeriodActual, goal.target).total;
   if (newPts > prevPts) {
     const diff = Math.round((newPts - prevPts) * 10) / 10;
-    const exceeded = getProgress(value, goal.target).exceeded && !getProgress(prev, goal.target).exceeded;
+    const exceeded = getProgress(newPeriodActual, goal.target).exceeded
+      && !getProgress(prevPeriodActual, goal.target).exceeded;
     showToast(exceeded ? `Hedef aşıldı! +${diff} puan ⭐` : `+${diff} puan!`);
   }
   return true;
@@ -1958,6 +2029,8 @@ goalsContainer.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if (!el) return;
   const { action, id } = el.dataset;
+  if (action === 'toggle-goal-menu') { toggleGoalMenu(id); return; }
+  if (action === 'delete-goal-card') { openDeleteGoalModal(id); return; }
   if (action === 'show-guide') { showGuide(id); return; }
   if (action === 'show-why') { openWhyModal(id); return; }
   if (action === 'save-goal') { saveGoalFromInput(id); return; }
@@ -2020,7 +2093,7 @@ document.getElementById('goals-manage-list').addEventListener('click', (e) => {
   const g = findGoal(id);
   if (!g) return;
   if (e.target.dataset.action === 'delete-goal') {
-    if (confirm(`"${g.name}" silinsin mi?`)) { deleteGoal(id); render(); }
+    openDeleteGoalModal(id);
   }
   if (e.target.dataset.action === 'edit-goal') {
     const name = prompt('Hedef adı:', g.name);
@@ -2145,6 +2218,16 @@ document.getElementById('why-form').addEventListener('submit', (e) => {
 });
 
 document.getElementById('daily-report-start').addEventListener('click', closeDailyReport);
+
+document.getElementById('delete-goal-cancel').addEventListener('click', closeDeleteGoalModal);
+document.getElementById('delete-goal-confirm').addEventListener('click', confirmDeleteGoal);
+document.getElementById('delete-goal-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'delete-goal-modal') closeDeleteGoalModal();
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.goal-card-menu-wrap')) closeAllGoalMenus();
+});
 
 populateCategorySelects();
 initWhyPlaceholders();

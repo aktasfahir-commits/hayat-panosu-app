@@ -793,6 +793,68 @@ body {
 
 .goal-card-top-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
+.goal-card-menu-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.btn-goal-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.btn-goal-menu:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.goal-card-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 148px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.goal-card-menu.hidden { display: none; }
+
+.goal-card-menu-item {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1.3;
+}
+
+.goal-card-menu-item:hover {
+  background: var(--surface-2);
+}
+
+.goal-card-menu-delete { color: #b91c1c; }
+
 .goal-card-points {
   font-size: 0.72rem;
   font-weight: 700;
@@ -1193,6 +1255,51 @@ input:focus, .select-input:focus {
 .btn-primary { background: var(--primary); color: #fff; }
 .btn-primary:hover { background: var(--primary-hover); }
 .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+
+.btn-danger {
+  background: #dc2626;
+  border: 1px solid #b91c1c;
+  color: #fff;
+  font-weight: 700;
+}
+
+.btn-danger:active { transform: scale(0.98); }
+
+.delete-goal-lead {
+  margin: 0 0 12px;
+  font-size: 0.92rem;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.delete-goal-label {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.delete-goal-name {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.delete-goal-warning {
+  margin: 0 0 16px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.delete-goal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.delete-goal-actions .btn { flex: 1; }
 .btn-block { width: 100%; }
 .btn-sm { padding: 8px 12px; font-size: 0.8rem; }
 
