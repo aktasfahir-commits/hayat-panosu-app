@@ -25,7 +25,7 @@ const DEFAULT_GOALS = {
   sukur: { name: 'Şükür', unit: 'madde', icon: '🙏', suggest: 3, category: 'zihin', guide: { description: 'Her gün minnettar olduğun birkaç şeyi yaz.', videoUrl: '' } },
   // Gelişim
   kitap: { name: 'Kitap', unit: 'sayfa', icon: '📖', suggest: 20, category: 'gelisim', guide: { description: 'Her gün düzenli kitap oku, sayfa hedefini koru.', videoUrl: '' } },
-  dil: { name: 'Dil', unit: 'dakika', icon: '🗣️', suggest: 15, category: 'gelisim', guide: { description: 'Yabancı dil pratiği yap: kelime, dinleme veya konuşma.', videoUrl: '' } },
+  dil: { name: 'Dil', unit: 'dakika', icon: '🌍', suggest: 15, category: 'gelisim', guide: { description: 'Yabancı dil pratiği yap: kelime, dinleme veya konuşma.', videoUrl: '' } },
   ders: { name: 'Ders', unit: 'dakika', icon: '📚', suggest: 30, category: 'gelisim', guide: { description: 'Odaklanmış ders veya çalışma süresi ayır.', videoUrl: '' } },
   // Yaşam / Hedefler
   para: { name: 'Para Biriktirme', unit: '₺', icon: '💰', suggest: 50, category: 'yasam', guide: { description: 'Her gün küçük bir miktar biriktirerek hedefe yaklaş.', videoUrl: '' } },
@@ -230,12 +230,49 @@ function loadData() {
       if (name) data.userName = name;
       if (parsed.lastOpenDate) data.lastOpenDate = parsed.lastOpenDate;
       if (parsed.lastReportShownDate) data.lastReportShownDate = parsed.lastReportShownDate;
+      dedupeGoalsOnLoad();
       return;
     }
     migrateToV8(parsed || {});
+    dedupeGoalsOnLoad();
   } catch {
     data = { version: 8, goals: [], days: {}, setupComplete: false };
   }
+}
+
+// Aynı defaultKey ile yanlışlıkla iki kayıt oluşmuşsa birleştir (ilerleme kaybı olmasın).
+function dedupeGoalsOnLoad() {
+  const canonicalByKey = new Map();
+  const toRemove = [];
+
+  data.goals.forEach((g) => {
+    if (!g.defaultKey) return;
+    const canonicalId = defaultGoalId(g.defaultKey);
+    const keeper = canonicalByKey.get(g.defaultKey);
+    if (!keeper) {
+      canonicalByKey.set(g.defaultKey, g);
+      return;
+    }
+    const keep = keeper.id === canonicalId ? keeper : (g.id === canonicalId ? g : keeper);
+    const drop = keep === keeper ? g : keeper;
+    canonicalByKey.set(g.defaultKey, keep);
+    if (drop.id !== keep.id) toRemove.push({ from: drop.id, to: keep.id });
+  });
+
+  if (!toRemove.length) return;
+
+  toRemove.forEach(({ from, to }) => {
+    Object.values(data.days).forEach((day) => {
+      const progress = day.progress;
+      if (!progress || progress[from] === undefined) return;
+      progress[to] = (Number(progress[to]) || 0) + (Number(progress[from]) || 0);
+      delete progress[from];
+    });
+  });
+
+  const keeperIds = new Set([...canonicalByKey.values()].map((g) => g.id));
+  data.goals = data.goals.filter((g) => !g.defaultKey || keeperIds.has(g.id));
+  saveData();
 }
 
 // Eski sürümlerden (v5/v6/v7) hedefleri ve günlük ilerlemeyi taşır.
@@ -1143,6 +1180,59 @@ function switchView(view) {
 
 const STATS_MEDALS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
 
+const PRESET_NAME_TO_KEY = Object.fromEntries(
+  Object.entries(DEFAULT_GOALS).map(([key, def]) => [def.name.toLocaleLowerCase('tr-TR'), key])
+);
+
+function goalDisplayIcon(goal) {
+  if (goal.defaultKey && DEFAULT_GOALS[goal.defaultKey]?.icon) {
+    return DEFAULT_GOALS[goal.defaultKey].icon;
+  }
+  const nameKey = (goal.name || '').trim().toLocaleLowerCase('tr-TR');
+  const presetKey = PRESET_NAME_TO_KEY[nameKey];
+  if (presetKey && DEFAULT_GOALS[presetKey]?.icon) {
+    return DEFAULT_GOALS[presetKey].icon;
+  }
+  const cat = goal.category || inferCategory(goal);
+  return CATEGORIES[cat]?.icon || '🎯';
+}
+
+function statsGroupKey(goal) {
+  if (goal.defaultKey) return `dk:${goal.defaultKey}`;
+  const nameKey = (goal.name || '').trim().toLocaleLowerCase('tr-TR');
+  const presetKey = PRESET_NAME_TO_KEY[nameKey];
+  if (presetKey) return `dk:${presetKey}`;
+  return `name:${nameKey}`;
+}
+
+function buildStatsGoalGroups() {
+  const groups = new Map();
+
+  data.goals.forEach((goal) => {
+    const key = statsGroupKey(goal);
+    let group = groups.get(key);
+    if (!group) {
+      group = { displayGoal: goal, goalIds: [] };
+      groups.set(key, group);
+    }
+    group.goalIds.push(goal.id);
+    if (goal.defaultKey) group.displayGoal = goal;
+  });
+
+  return [...groups.values()];
+}
+
+function buildStatsRows(weekDates, monthDates) {
+  return buildStatsGoalGroups()
+    .map((group) => ({
+      goal: group.displayGoal,
+      week: group.goalIds.reduce((sum, id) => sum + sumGoalProgress(id, weekDates), 0),
+      month: group.goalIds.reduce((sum, id) => sum + sumGoalProgress(id, monthDates), 0),
+    }))
+    .filter((row) => row.week > 0 || row.month > 0)
+    .sort((a, b) => Math.max(b.week, b.month) - Math.max(a.week, a.month));
+}
+
 function getLast7DaysDates(referenceDate = today()) {
   const dates = [];
   for (let i = 6; i >= 0; i--) dates.push(shiftDate(referenceDate, -i));
@@ -1154,8 +1244,11 @@ function sumGoalProgress(goalId, dates) {
 }
 
 function aggregateGoalTotals(dates) {
-  return data.goals
-    .map((goal) => ({ goal, total: sumGoalProgress(goal.id, dates) }))
+  return buildStatsGoalGroups()
+    .map((group) => ({
+      goal: group.displayGoal,
+      total: group.goalIds.reduce((sum, id) => sum + sumGoalProgress(id, dates), 0),
+    }))
     .filter((item) => item.total > 0)
     .sort((a, b) => b.total - a.total);
 }
@@ -1190,7 +1283,7 @@ function statCellLabel(goal, total) {
 }
 
 function renderStatsTableRow(goal, weekTotal, monthTotal) {
-  const icon = goal.icon || CATEGORIES[goal.category]?.icon || '🎯';
+  const icon = goalDisplayIcon(goal);
   const week = statCellLabel(goal, weekTotal);
   const month = statCellLabel(goal, monthTotal);
   const weekClass = week.empty ? ' stats-td-empty' : '';
@@ -1207,15 +1300,7 @@ function renderStatsTableRow(goal, weekTotal, monthTotal) {
   </tr>`;
 }
 
-function renderStatsTable(weekDates, monthDates) {
-  const rows = data.goals
-    .map((goal) => ({
-      goal,
-      week: sumGoalProgress(goal.id, weekDates),
-      month: sumGoalProgress(goal.id, monthDates),
-    }))
-    .sort((a, b) => Math.max(b.week, b.month) - Math.max(a.week, a.month));
-
+function renderStatsTable(rows) {
   const body = rows.map((r) => renderStatsTableRow(r.goal, r.week, r.month)).join('');
   return `<section class="stats-block stats-table-block">
     <div class="stats-table-wrap">
@@ -1241,7 +1326,7 @@ function renderTopGoalsSection(items) {
     </section>`;
   }
   const lines = items.slice(0, 5).map((item, i) => {
-    const icon = item.goal.icon || CATEGORIES[item.goal.category]?.icon || '🎯';
+    const icon = goalDisplayIcon(item.goal);
     return `<li class="stats-rank-line">
       <span class="stats-medal">${STATS_MEDALS[i] || '•'}</span>
       <span class="stats-rank-icon" aria-hidden="true">${icon}</span>
@@ -1263,11 +1348,18 @@ function renderStats() {
 
   const weekDates = getLast7DaysDates();
   const monthDates = getMonthDates(today());
+  const rows = buildStatsRows(weekDates, monthDates);
+
+  if (!rows.length) {
+    container.innerHTML = '<p class="stats-empty">Henüz yeterli veri oluşmadı.</p>';
+    return;
+  }
+
   const weekData = aggregateGoalTotals(weekDates);
   const monthData = aggregateGoalTotals(monthDates);
   const topSource = weekData.length ? weekData : monthData;
 
-  container.innerHTML = renderStatsTable(weekDates, monthDates) + renderTopGoalsSection(topSource);
+  container.innerHTML = renderStatsTable(rows) + renderTopGoalsSection(topSource);
 }
 
 function addFromLibrary(key) {
