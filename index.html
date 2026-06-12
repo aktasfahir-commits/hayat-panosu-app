@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hayat Panosu</title>
-  <link rel="stylesheet" href="styles.css?v=20260631">
+  <link rel="stylesheet" href="styles.css?v=20260701">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -147,6 +147,41 @@
     <div class="modal daily-report-modal">
       <div id="daily-report-content" class="daily-report-content"></div>
       <button type="button" class="btn btn-primary btn-block daily-report-start" id="daily-report-start">Bugüne Başla</button>
+    </div>
+  </div>
+
+  <div id="edit-goal-modal" class="modal-overlay hidden">
+    <div class="modal modal-compact">
+      <button type="button" class="modal-close" id="edit-goal-close" aria-label="Kapat">✕</button>
+      <h3>✏️ Hedefi Düzenle</h3>
+      <form id="edit-goal-form" class="add-form">
+        <label for="edit-goal-name" class="form-label">Hedef adı</label>
+        <input type="text" id="edit-goal-name" maxlength="100" required>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="edit-goal-target" class="form-label">Hedef değeri</label>
+            <input type="number" id="edit-goal-target" min="0.01" step="any" required>
+          </div>
+          <div class="form-field">
+            <label for="edit-goal-unit" class="form-label">Birim</label>
+            <input type="text" id="edit-goal-unit" maxlength="20" placeholder="dakika, litre">
+          </div>
+        </div>
+        <fieldset class="period-fieldset">
+          <legend class="period-legend">Periyot</legend>
+          <div class="period-radios">
+            <label class="period-radio"><input type="radio" name="edit-goal-period" value="daily" checked><span>Günlük</span></label>
+            <label class="period-radio"><input type="radio" name="edit-goal-period" value="weekly"><span>Haftalık</span></label>
+            <label class="period-radio"><input type="radio" name="edit-goal-period" value="monthly"><span>Aylık</span></label>
+          </div>
+        </fieldset>
+        <label for="edit-goal-why" class="form-label">Neden</label>
+        <input type="text" id="edit-goal-why" maxlength="500" placeholder="Bu hedef senin için neden önemli?">
+        <div class="edit-goal-actions">
+          <button type="button" class="btn btn-ghost" id="edit-goal-cancel">Vazgeç</button>
+          <button type="submit" class="btn btn-primary">Kaydet</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -348,6 +383,6 @@
     <footer class="footer"><p>Veriler tarayıcında tarih bazlı saklanır.</p></footer>
   </div>
 
-  <script src="app.js?v=20260631"></script>
+  <script src="app.js?v=20260701"></script>
 </body>
 </html>

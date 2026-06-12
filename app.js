@@ -83,6 +83,7 @@ let data = { version: 8, goals: [], days: {}, setupComplete: false };
 let selectedDate = today();
 let currentView = 'dashboard'; // 'dashboard' | 'library' | 'stats'
 let deleteGoalId = null;
+let editGoalId = null;
 
 // Onboarding state: 0 = kategori, 1 = hedef, 2 = değer
 let wizardStep = 0;
@@ -800,6 +801,7 @@ function renderGoalCard(g) {
           <div class="goal-card-menu-wrap">
             <button type="button" class="btn-goal-menu" data-action="toggle-goal-menu" data-id="${g.id}" aria-label="Hedef seçenekleri" aria-haspopup="true" aria-expanded="false">⋯</button>
             <div class="goal-card-menu hidden" id="goal-menu-${g.id}" role="menu">
+              <button type="button" class="goal-card-menu-item" data-action="edit-goal-card" data-id="${g.id}" role="menuitem">✏️ Hedefi Düzenle</button>
               <button type="button" class="goal-card-menu-item goal-card-menu-delete" data-action="delete-goal-card" data-id="${g.id}" role="menuitem">🗑️ Hedefi Sil</button>
             </div>
           </div>
@@ -1584,10 +1586,77 @@ function confirmDeleteGoal() {
   deleteGoal(removedId);
   closeDeleteGoalModal();
   if (whyModalGoalId === removedId) closeWhyModal();
+  if (editGoalId === removedId) closeEditGoalModal();
   render();
   if (currentView === 'library') renderLibrary();
   if (currentView === 'stats') renderStats();
   showToast(`${name} silindi`);
+}
+
+function openEditGoalModal(goalId) {
+  const g = findGoal(goalId);
+  if (!g) return;
+  editGoalId = goalId;
+  closeAllGoalMenus();
+  document.getElementById('edit-goal-name').value = g.name;
+  document.getElementById('edit-goal-target').value = formatNumber(g.target);
+  document.getElementById('edit-goal-unit').value = g.unit || '';
+  document.getElementById('edit-goal-why').value = (g.why || '').trim();
+  const period = normalizePeriod(g.period);
+  document.querySelector(`input[name="edit-goal-period"][value="${period}"]`)?.click();
+  setWhyPlaceholder(document.getElementById('edit-goal-why'), {
+    defaultKey: g.defaultKey,
+    category: g.category,
+  });
+  document.getElementById('edit-goal-modal').classList.remove('hidden');
+  document.getElementById('edit-goal-name').focus();
+}
+
+function closeEditGoalModal() {
+  editGoalId = null;
+  document.getElementById('edit-goal-modal').classList.add('hidden');
+}
+
+function updateGoalDetails(goalId, { name, target, unit, period, why }) {
+  const goal = findGoal(goalId);
+  if (!goal) return false;
+  const trimmedName = (name || '').trim();
+  const targetVal = parseFloat(target);
+  if (!trimmedName || Number.isNaN(targetVal) || targetVal <= 0) return false;
+
+  goal.name = trimmedName;
+  goal.target = targetVal;
+  goal.unit = (unit || '').trim();
+  const p = normalizePeriod(period);
+  if (p === 'daily') delete goal.period;
+  else goal.period = p;
+
+  const whyText = (why || '').trim();
+  if (whyText) goal.why = whyText;
+  else delete goal.why;
+
+  saveData();
+  return true;
+}
+
+function saveEditGoalForm() {
+  if (!editGoalId) return;
+  const ok = updateGoalDetails(editGoalId, {
+    name: document.getElementById('edit-goal-name').value,
+    target: document.getElementById('edit-goal-target').value,
+    unit: document.getElementById('edit-goal-unit').value,
+    period: readPeriodRadio('edit-goal-period'),
+    why: document.getElementById('edit-goal-why').value,
+  });
+  if (!ok) {
+    showToast('Geçerli bir hedef adı ve değeri gir.');
+    return;
+  }
+  const name = findGoal(editGoalId)?.name || 'Hedef';
+  closeEditGoalModal();
+  render();
+  if (currentView === 'stats') renderStats();
+  showToast(`${name} güncellendi`);
 }
 
 // Yalnızca hedef değerini günceller (ad ve birim değişmez).
@@ -1942,6 +2011,8 @@ function goHome() {
   closeDailyReport();
   closeWhyModal();
   closeNameEditModal();
+  closeEditGoalModal();
+  closeDeleteGoalModal();
   document.querySelectorAll('.dashboard details[open]').forEach((d) => d.removeAttribute('open'));
   switchView('dashboard');
 }
@@ -2030,6 +2101,7 @@ goalsContainer.addEventListener('click', (e) => {
   if (!el) return;
   const { action, id } = el.dataset;
   if (action === 'toggle-goal-menu') { toggleGoalMenu(id); return; }
+  if (action === 'edit-goal-card') { openEditGoalModal(id); return; }
   if (action === 'delete-goal-card') { openDeleteGoalModal(id); return; }
   if (action === 'show-guide') { showGuide(id); return; }
   if (action === 'show-why') { openWhyModal(id); return; }
@@ -2218,6 +2290,16 @@ document.getElementById('why-form').addEventListener('submit', (e) => {
 });
 
 document.getElementById('daily-report-start').addEventListener('click', closeDailyReport);
+
+document.getElementById('edit-goal-close').addEventListener('click', closeEditGoalModal);
+document.getElementById('edit-goal-cancel').addEventListener('click', closeEditGoalModal);
+document.getElementById('edit-goal-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'edit-goal-modal') closeEditGoalModal();
+});
+document.getElementById('edit-goal-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  saveEditGoalForm();
+});
 
 document.getElementById('delete-goal-cancel').addEventListener('click', closeDeleteGoalModal);
 document.getElementById('delete-goal-confirm').addEventListener('click', confirmDeleteGoal);

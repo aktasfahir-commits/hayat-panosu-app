@@ -1300,6 +1300,24 @@ input:focus, .select-input:focus {
 }
 
 .delete-goal-actions .btn { flex: 1; }
+
+.form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.form-field { flex: 1; min-width: 0; }
+
+.edit-goal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.edit-goal-actions .btn { flex: 1; }
 .btn-block { width: 100%; }
 .btn-sm { padding: 8px 12px; font-size: 0.8rem; }
 
