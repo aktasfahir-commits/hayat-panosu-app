@@ -1371,6 +1371,68 @@ function renderStatsTable(rows) {
   </section>`;
 }
 
+const WEEKLY_SUMMARY_CLOSINGS = [
+  'Küçük adımlar birikiyor. Güzel gidiyorsun.',
+  'Her kayıt bir adım daha. Kendine iyi bakmaya devam.',
+  'Bu hafta kendine zaman ayırdın. Bu çok değerli.',
+  'İstikrarlı ilerliyorsun. Gurur duyabilirsin.',
+  'Haftayı böyle tamamlamak güzel bir his.',
+  'Kendin için yaptıkların birikiyor. Devam et.',
+];
+
+function weeklyGainLine(goal, total) {
+  return todaysGainLine({
+    name: goal.name,
+    unit: goal.unit,
+    defaultKey: goal.defaultKey || null,
+    actual: total,
+  });
+}
+
+function weeklySummaryClosing(topGoal) {
+  const seed = `${getLast7DaysDates().join('')}-${topGoal.id || topGoal.name}`;
+  return stablePick(seed, WEEKLY_SUMMARY_CLOSINGS);
+}
+
+function renderWeeklySummarySection(weekDates) {
+  const weekData = aggregateGoalTotals(weekDates);
+
+  if (!weekData.length) {
+    return `<section class="stats-block stats-weekly-block">
+      <h3 class="stats-block-title">🌟 Haftalık Özet</h3>
+      <div class="stats-weekly-summary">
+        <p class="stats-weekly-empty">Bu hafta henüz yeterli veri oluşmadı.</p>
+      </div>
+    </section>`;
+  }
+
+  const topGoal = weekData[0];
+  const topIcon = goalDisplayIcon(topGoal.goal);
+  const gainLines = weekData.slice(0, 5).map((item) => {
+    const line = weeklyGainLine(item.goal, item.total);
+    return `<li class="stats-weekly-gain">
+      <span class="stats-weekly-check" aria-hidden="true">✓</span>
+      <span>${escapeHtml(line)}</span>
+    </li>`;
+  }).join('');
+
+  return `<section class="stats-block stats-weekly-block">
+    <h3 class="stats-block-title">🌟 Haftalık Özet</h3>
+    <div class="stats-weekly-summary">
+      <p class="stats-weekly-lead">Bu Hafta Kendin İçin Neler Yaptın?</p>
+      <ul class="stats-weekly-gains">${gainLines}</ul>
+      <div class="stats-weekly-top">
+        <p class="stats-weekly-top-label">Bu hafta en çok ilerlediğin hedef:</p>
+        <p class="stats-weekly-top-goal">
+          <span class="stats-weekly-top-icon" aria-hidden="true">${topIcon}</span>
+          <span>${escapeHtml(topGoal.goal.name)}</span>
+        </p>
+      </div>
+      <p class="stats-weekly-closing">${escapeHtml(weeklySummaryClosing(topGoal.goal))}</p>
+    </div>
+  </section>`;
+}
+
 function renderTopGoalsSection(items) {
   if (!items.length) {
     return `<section class="stats-block">
@@ -1402,17 +1464,15 @@ function renderStats() {
   const weekDates = getLast7DaysDates();
   const monthDates = getMonthDates(today());
   const rows = buildStatsRows(weekDates, monthDates);
-
-  if (!rows.length) {
-    container.innerHTML = '<p class="stats-empty">Henüz yeterli veri oluşmadı.</p>';
-    return;
-  }
-
   const weekData = aggregateGoalTotals(weekDates);
   const monthData = aggregateGoalTotals(monthDates);
   const topSource = weekData.length ? weekData : monthData;
 
-  container.innerHTML = renderStatsTable(rows) + renderTopGoalsSection(topSource);
+  const parts = [renderWeeklySummarySection(weekDates)];
+  if (rows.length) parts.push(renderStatsTable(rows));
+  parts.push(renderTopGoalsSection(topSource));
+
+  container.innerHTML = parts.join('');
 }
 
 function addFromLibrary(key) {
