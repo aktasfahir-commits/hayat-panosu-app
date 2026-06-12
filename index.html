@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hayat Panosu</title>
-  <link rel="stylesheet" href="styles.css?v=20260622">
+  <link rel="stylesheet" href="styles.css?v=20260624">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -216,6 +216,7 @@
     <main class="dashboard" id="dashboard-view">
       <div class="dashboard-actions">
         <button type="button" class="btn btn-primary btn-add-goals" id="open-library-btn">📚 Hedef Kütüphanesi</button>
+        <button type="button" class="btn btn-ghost btn-stats-nav" id="open-stats-btn">📊 İstatistikler</button>
       </div>
 
       <section class="card card-wide goals-panel" id="goals-section">
@@ -313,10 +314,26 @@
       </section>
     </main>
 
+    <main class="stats hidden" id="stats-view">
+      <section class="card card-wide">
+        <button type="button" class="btn btn-primary btn-back-dash" id="back-from-stats-btn">
+          <span class="btn-back-arrow">←</span> Panoma Dön
+        </button>
+        <div class="card-header">
+          <div class="card-icon stats-page-icon">📊</div>
+          <div>
+            <h2>İstatistikler</h2>
+            <p class="card-desc">Zaman içindeki gelişim özeti</p>
+          </div>
+        </div>
+        <div id="stats-content"></div>
+      </section>
+    </main>
+
     <div id="toast" class="toast hidden"></div>
     <footer class="footer"><p>Veriler tarayıcında tarih bazlı saklanır.</p></footer>
   </div>
 
-  <script src="app.js?v=20260622"></script>
+  <script src="app.js?v=20260624"></script>
 </body>
 </html>

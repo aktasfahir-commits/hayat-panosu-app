@@ -346,7 +346,20 @@ body {
 .card h2 { font-size: 1.05rem; font-weight: 700; }
 .card-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
 
-.dashboard-actions { display: flex; }
+.dashboard-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-stats-nav {
+  width: 100%;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
 
 .btn-add-goals {
   width: 100%;
@@ -360,8 +373,105 @@ body {
 .btn-add-goals:active { transform: scale(0.99); }
 
 /* View switching */
-.dashboard.hidden, .library.hidden { display: none; }
-.library { display: flex; flex-direction: column; gap: 16px; }
+.dashboard.hidden, .library.hidden, .stats.hidden { display: none; }
+.library, .stats { display: flex; flex-direction: column; gap: 16px; }
+
+.stats-page-icon {
+  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.stats-block {
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.stats-block:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.stats-block-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+}
+
+.stats-list,
+.stats-rank-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stats-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: var(--text);
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  line-height: 1.45;
+}
+
+.stats-line-icon {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+.stats-line-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.stats-line-name { font-weight: 700; }
+.stats-line-sep { font-weight: 500; color: var(--text-muted); }
+.stats-line-amount { font-weight: 600; color: #4a4a5a; }
+
+.stats-rank-list { gap: 6px; }
+
+.stats-rank-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text);
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.stats-medal { flex-shrink: 0; font-size: 1rem; line-height: 1; }
+.stats-rank-icon { flex-shrink: 0; font-size: 0.95rem; line-height: 1; }
+.stats-rank-name { min-width: 0; word-break: break-word; line-height: 1.3; }
+
+.stats-empty,
+.stats-empty-section {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.stats-empty {
+  text-align: center;
+  padding: 24px 12px;
+}
 
 .btn-back-dash {
   display: flex;

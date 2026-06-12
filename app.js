@@ -81,7 +81,7 @@ function truncateWhy(text, max = WHY_PREVIEW_MAX) {
 
 let data = { version: 8, goals: [], days: {}, setupComplete: false };
 let selectedDate = today();
-let currentView = 'dashboard'; // 'dashboard' | 'library'
+let currentView = 'dashboard'; // 'dashboard' | 'library' | 'stats'
 
 // Onboarding state: 0 = kategori, 1 = hedef, 2 = değer
 let wizardStep = 0;
@@ -1132,9 +1132,120 @@ function switchView(view) {
   currentView = view;
   document.getElementById('dashboard-view').classList.toggle('hidden', view !== 'dashboard');
   document.getElementById('library-view').classList.toggle('hidden', view !== 'library');
+  document.getElementById('stats-view').classList.toggle('hidden', view !== 'stats');
   if (view === 'library') renderLibrary();
+  else if (view === 'stats') renderStats();
   else render();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---------------- İstatistikler (V1) ---------------- */
+
+const STATS_MEDALS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+
+function getLast7DaysDates(referenceDate = today()) {
+  const dates = [];
+  for (let i = 6; i >= 0; i--) dates.push(shiftDate(referenceDate, -i));
+  return dates;
+}
+
+function sumGoalProgress(goalId, dates) {
+  return dates.reduce((sum, d) => sum + (Number(getActual(d, goalId)) || 0), 0);
+}
+
+function aggregateGoalTotals(dates) {
+  return data.goals
+    .map((goal) => ({ goal, total: sumGoalProgress(goal.id, dates) }))
+    .filter((item) => item.total > 0)
+    .sort((a, b) => b.total - a.total);
+}
+
+function formatStatNumber(n) {
+  const num = Number(n) || 0;
+  if (Number.isInteger(num)) return num.toLocaleString('tr-TR');
+  return num.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+}
+
+function statAmountLabel(goal, total) {
+  const unit = (goal.unit || '').toLocaleLowerCase('tr-TR');
+  const val = formatStatNumber(total);
+  if (unit === 'litre') return `${val} litre su`;
+  if (unit === 'adım' || unit === 'adim') return `${val} adım`;
+  if (unit === 'sayfa') return `${val} sayfa`;
+  if (unit === 'dakika') return `${val} dakika`;
+  if (unit === 'saat') return `${val} saat`;
+  if (unit === '₺' || unit === 'tl') return `${val} TL`;
+  if (unit === 'tekrar') return `${val} mekik`;
+  if (unit === 'km') return `${val} km`;
+  if (unit === 'adet') return `${val} adet`;
+  if (unit === 'görev' || unit === 'gorev') return `${val} görev`;
+  if (goal.unit) return `${val} ${goal.unit}`;
+  return `${val}`;
+}
+
+function renderStatsLine(goal, total) {
+  const icon = goal.icon || CATEGORIES[goal.category]?.icon || '🎯';
+  const amount = statAmountLabel(goal, total);
+  return `<li class="stats-line">
+    <span class="stats-line-icon" aria-hidden="true">${icon}</span>
+    <span class="stats-line-text">
+      <span class="stats-line-name">${escapeHtml(goal.name)}</span>
+      <span class="stats-line-sep"> — </span>
+      <span class="stats-line-amount">${escapeHtml(amount)}</span>
+    </span>
+  </li>`;
+}
+
+function renderStatsSection(title, items) {
+  if (!items.length) {
+    return `<section class="stats-block">
+      <h3 class="stats-block-title">${escapeHtml(title)}</h3>
+      <p class="stats-empty-section">Henüz yeterli veri oluşmadı.</p>
+    </section>`;
+  }
+  const lines = items.map((item) => renderStatsLine(item.goal, item.total)).join('');
+  return `<section class="stats-block">
+    <h3 class="stats-block-title">${escapeHtml(title)}</h3>
+    <ul class="stats-list">${lines}</ul>
+  </section>`;
+}
+
+function renderTopGoalsSection(items) {
+  if (!items.length) {
+    return `<section class="stats-block">
+      <h3 class="stats-block-title">En Aktif Hedeflerin</h3>
+      <p class="stats-empty-section">Henüz yeterli veri oluşmadı.</p>
+    </section>`;
+  }
+  const lines = items.slice(0, 5).map((item, i) => {
+    const icon = item.goal.icon || CATEGORIES[item.goal.category]?.icon || '🎯';
+    return `<li class="stats-rank-line">
+      <span class="stats-medal">${STATS_MEDALS[i] || '•'}</span>
+      <span class="stats-rank-icon" aria-hidden="true">${icon}</span>
+      <span class="stats-rank-name">${escapeHtml(item.goal.name)}</span>
+    </li>`;
+  }).join('');
+  return `<section class="stats-block">
+    <h3 class="stats-block-title">En Aktif Hedeflerin</h3>
+    <ul class="stats-rank-list">${lines}</ul>
+  </section>`;
+}
+
+function renderStats() {
+  const container = document.getElementById('stats-content');
+  const weekData = aggregateGoalTotals(getLast7DaysDates());
+  const monthData = aggregateGoalTotals(getMonthDates(today()));
+  const topSource = weekData.length ? weekData : monthData;
+
+  if (!weekData.length && !monthData.length) {
+    container.innerHTML = '<p class="stats-empty">Henüz yeterli veri oluşmadı.</p>';
+    return;
+  }
+
+  container.innerHTML =
+    renderStatsSection('Son 7 Gün', weekData)
+    + renderStatsSection('Bu Ay', monthData)
+    + renderTopGoalsSection(topSource);
 }
 
 function addFromLibrary(key) {
@@ -1544,7 +1655,9 @@ document.getElementById('home-btn').addEventListener('click', goHome);
 
 // Hedef Kütüphanesi: dashboard <-> kütüphane görünüm geçişi.
 document.getElementById('open-library-btn').addEventListener('click', () => switchView('library'));
+document.getElementById('open-stats-btn').addEventListener('click', () => switchView('stats'));
 document.getElementById('back-to-dash-btn').addEventListener('click', () => switchView('dashboard'));
+document.getElementById('back-from-stats-btn').addEventListener('click', () => switchView('dashboard'));
 document.getElementById('library-list').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-action="add-library"]');
   if (btn) addFromLibrary(btn.dataset.key);
