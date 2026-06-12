@@ -813,7 +813,6 @@ function renderGoalCard(g) {
       <div class="goal-card-meta">
         <span class="goal-card-target">
           <strong>${formatNumber(progressActual || 0)}</strong> / ${formatNumber(g.target)}${unit}
-          <button type="button" class="btn-edit-target" data-action="edit-target" data-id="${g.id}" title="Hedef değerini düzenle" aria-label="Hedef değerini düzenle">✏️</button>
         </span>
         <span class="goal-card-meta-right">
           <span class="goal-streak-mini">🔥 ${catStreak}</span>
@@ -824,17 +823,10 @@ function renderGoalCard(g) {
           </span>
         </span>
       </div>
-      <div class="goal-edit-row hidden" id="edit-${g.id}">
-        <label for="edit-input-${g.id}">Yeni hedef</label>
-        <input type="number" class="goal-edit-input" id="edit-input-${g.id}" value="${formatNumber(g.target)}" min="0.01" step="any">
-        ${g.unit ? `<span class="unit-label">${escapeHtml(g.unit)}</span>` : ''}
-        <button type="button" class="btn btn-primary btn-sm" data-action="save-target" data-id="${g.id}">Kaydet</button>
-        <button type="button" class="btn btn-ghost btn-sm" data-action="cancel-target" data-id="${g.id}">İptal</button>
-      </div>
       <div class="goal-card-input">
         <div class="actual-input-wrap">
           <input type="number" id="actual-${g.id}" class="actual-input" data-action="update-goal"
-            value="${g.actual || ''}" min="0" step="any" placeholder="0" aria-label="Gerçekleşen ${escapeHtml(g.name)}">
+            value="" min="0" step="any" placeholder="0" aria-label="Gerçekleşen ${escapeHtml(g.name)}">
           ${g.unit ? `<span class="unit-label">${escapeHtml(g.unit)}</span>` : ''}
           <button type="button" class="btn-save" data-action="save-goal" data-id="${g.id}">Kaydet</button>
         </div>
@@ -1659,17 +1651,6 @@ function saveEditGoalForm() {
   showToast(`${name} güncellendi`);
 }
 
-// Yalnızca hedef değerini günceller (ad ve birim değişmez).
-function updateGoalTarget(goalId, rawValue) {
-  const value = parseFloat(rawValue);
-  if (Number.isNaN(value) || value <= 0) return false;
-  const goal = findGoal(goalId);
-  if (!goal) return false;
-  goal.target = value;
-  saveData();
-  return true;
-}
-
 function updateGoalWhy(goalId, text) {
   const goal = findGoal(goalId);
   if (!goal) return false;
@@ -2077,9 +2058,15 @@ const goalsContainer = document.getElementById('goals-by-category');
 function saveGoalFromInput(goalId) {
   const input = document.getElementById(`actual-${goalId}`);
   if (!input) return;
-  if (updateGoalProgress(goalId, input.value)) {
+  const raw = input.value;
+  if (updateGoalProgress(goalId, raw)) {
     render();
     showSavedIndicator(goalId);
+    const cleared = document.getElementById(`actual-${goalId}`);
+    if (cleared) {
+      cleared.value = '';
+      cleared.blur();
+    }
   } else {
     render();
   }
@@ -2106,28 +2093,6 @@ goalsContainer.addEventListener('click', (e) => {
   if (action === 'show-guide') { showGuide(id); return; }
   if (action === 'show-why') { openWhyModal(id); return; }
   if (action === 'save-goal') { saveGoalFromInput(id); return; }
-  if (action === 'edit-target') {
-    const row = document.getElementById(`edit-${id}`);
-    if (!row) return;
-    row.classList.remove('hidden');
-    const input = document.getElementById(`edit-input-${id}`);
-    if (input) { input.focus(); input.select(); }
-    return;
-  }
-  if (action === 'cancel-target') {
-    document.getElementById(`edit-${id}`)?.classList.add('hidden');
-    return;
-  }
-  if (action === 'save-target') {
-    const input = document.getElementById(`edit-input-${id}`);
-    if (input && updateGoalTarget(id, input.value)) {
-      render();
-      showSavedIndicator(id);
-      showToast('Hedef değeri güncellendi');
-    } else {
-      showToast('Geçerli bir hedef değeri gir.');
-    }
-  }
 });
 
 document.getElementById('guide-close').addEventListener('click', () => document.getElementById('guide-modal').classList.add('hidden'));
